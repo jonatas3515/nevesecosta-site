@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { ToastProvider } from '@/components/ui/toast'
+import { ToastProvider } from '@/components/ui/toast-context'
 import { AdminNav } from './_components/AdminNav'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -86,21 +86,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-gray-50 pt-28">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black pt-28">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">{userEmail?.toLowerCase() === 'jonatascosta.adv@gmail.com' ? 'Administrador Geral' : 'Editor'} • Neves & Costa</h1>
+            <h1 className="text-3xl font-bold text-gold-500">{userEmail?.toLowerCase() === 'jonatascosta.adv@gmail.com' ? 'Administrador Geral' : 'Editor'} • Neves & Costa</h1>
             {authed && (
               <button
                 onClick={async () => { await supabase.auth.signOut(); window.location.href = '/admin/login' }}
-                className="text-sm text-red-600 hover:underline"
+                className="text-sm text-red-400 hover:text-red-300 hover:underline"
               >
                 Sair
               </button>
             )}
           </div>
           <AdminNav />
-          <div className="bg-white rounded-xl shadow-md p-6">{children}</div>
+          <div className="bg-gray-800 rounded-xl shadow-2xl p-6 border border-gold-500/20">{children}</div>
         </div>
       </div>
     </ToastProvider>

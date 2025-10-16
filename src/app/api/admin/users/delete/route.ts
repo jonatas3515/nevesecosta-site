@@ -1,0 +1,33 @@
+import { NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const { user_id } = body || {}
+    if (!user_id) return new Response(JSON.stringify({ error: 'user_id required' }), { status: 400 })
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    if (!url || !key) return new Response(JSON.stringify({ error: 'supabase not configured' }), { status: 500 })
+
+    const supabase = createClient(url, key)
+
+    // Delete from admin_permissions
+    await supabase.from('admin_permissions').delete().eq('user_id', user_id)
+
+    // Delete from profiles
+    await supabase.from('profiles').delete().eq('id', user_id)
+
+    // Delete auth user
+    const { error: delErr } = await (supabase.auth as any).admin.deleteUser(user_id)
+    if (delErr) throw delErr
+
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } })
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e?.message || String(e) }), { status: 500, headers: { 'content-type': 'application/json' } })
+  }
+}

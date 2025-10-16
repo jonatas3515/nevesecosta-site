@@ -38,19 +38,20 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="grid md:grid-cols-4 gap-4 mb-6">
-        <div className="p-4 border rounded-lg">
-          <div className="text-sm text-gray-500">Posts</div>
-          <div className="text-2xl font-bold">{loading ? '—' : counts.posts}</div>
-          <div className="text-xs text-gray-500">{loading ? '' : `${counts.published} publicados • ${counts.drafts} rascunhos`}</div>
+      <h2 className="text-2xl font-bold text-gold-500 mb-6">Dashboard</h2>
+      <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="p-6 border border-gold-500/30 rounded-lg bg-gray-700">
+          <div className="text-sm text-gray-400">Posts</div>
+          <div className="text-3xl font-bold text-gold-500">{loading ? '—' : counts.posts}</div>
+          <div className="text-xs text-gray-400 mt-1">{loading ? '' : `${counts.published} publicados • ${counts.drafts} rascunhos`}</div>
         </div>
-        <div className="p-4 border rounded-lg">
-          <div className="text-sm text-gray-500">Categorias</div>
-          <div className="text-2xl font-bold">{loading ? '—' : counts.categories}</div>
+        <div className="p-6 border border-gold-500/30 rounded-lg bg-gray-700">
+          <div className="text-sm text-gray-400">Categorias</div>
+          <div className="text-3xl font-bold text-gold-500">{loading ? '—' : counts.categories}</div>
         </div>
-        <div className="p-4 border rounded-lg">
-          <div className="text-sm text-gray-500">Comentários Pendentes</div>
-          <div className="text-2xl font-bold">{loading ? '—' : counts.pendingComments}</div>
+        <div className="p-6 border border-gold-500/30 rounded-lg bg-gray-700">
+          <div className="text-sm text-gray-400">Comentários Pendentes</div>
+          <div className="text-3xl font-bold text-gold-500">{loading ? '—' : counts.pendingComments}</div>
         </div>
       </div>
       {/* Removidos botões duplicados para evitar repetição: navegação permanece na barra superior */}

@@ -48,22 +48,22 @@ export function AdminNav() {
   }, [])
 
   return (
-    <nav className="mb-6 -mx-2 overflow-x-auto">
-      <ul className="flex items-center gap-2 px-2">
+    <nav className="mb-6 border-b border-gold-500/30 pb-4">
+      <ul className="flex items-center gap-2 px-2 flex-wrap">
         {(allowed ? baseLinks.filter(l => l.key === 'dashboard' || (allowed as any)[l.key]) : baseLinks).map((l) => {
-          const active = pathname?.startsWith(l.href);
+          const active = pathname === l.href
           return (
             <li key={l.href}>
               <Link
                 href={l.href}
-                className={`inline-flex items-center px-3 py-2 rounded-md text-sm border transition-colors ${
-                  active ? "bg-primary-600 text-white border-primary-600" : "bg-white hover:bg-gray-50"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  active ? 'bg-gold-500 text-gray-900' : 'text-gray-300 hover:bg-gray-700 hover:text-gold-500'
                 }`}
               >
                 {l.label}
               </Link>
             </li>
-          );
+          )
         })}
       </ul>
     </nav>
