@@ -45,9 +45,20 @@ export default function PedidosPage() {
       .eq('id', session.user.id)
       .single()
 
-    if (!profile || !['admin', 'editor'].includes(profile.role)) {
-      router.push('/')
-    }
+    // Permissões finas
+    try {
+      const { data: perms } = await supabase.from('admin_permissions').select('*').eq('user_id', session.user.id).maybeSingle()
+      const isAdmin = profile?.role === 'admin'
+      const canOrders = isAdmin || !!perms?.can_orders
+      if (!isAdmin && !['admin', 'editor'].includes(profile?.role)) {
+        router.push('/')
+        return
+      }
+      if (!canOrders) {
+        router.push('/admin')
+        return
+      }
+    } catch {}
   }
 
   const loadOrders = async () => {
@@ -107,9 +118,32 @@ export default function PedidosPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(String(data?.error || data))
-      alert('PDF gerado e armazenado com sucesso!')
+      // Após gerar, baixar o arquivo
+      const url = new URL('/api/admin/orders/signed-url', window.location.origin)
+      url.searchParams.set('id', order.id)
+      const r2 = await fetch(url.toString())
+      const j2 = await r2.json()
+      if (r2.ok && j2?.url) {
+        window.open(j2.url, '_blank')
+      }
+      alert('PDF gerado e baixado com sucesso!')
     } catch (e: any) {
       alert('Falha ao gerar PDF: ' + (e?.message || e))
+    } finally {
+      setBusyId('')
+    }
+  }
+
+  const deletePDF = async (order: Order) => {
+    if (!confirm('Excluir PDF deste pedido?')) return
+    try {
+      setBusyId(order.id)
+      const res = await fetch('/api/admin/orders/delete-pdf', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: order.id }) })
+      const j = await res.json()
+      if (!res.ok) throw new Error(String(j?.error || j))
+      alert('PDF excluído')
+    } catch (e: any) {
+      alert('Falha ao excluir PDF: ' + (e?.message || e))
     } finally {
       setBusyId('')
     }
@@ -492,17 +526,18 @@ export default function PedidosPage() {
                         👁️ Ver
                       </button>
                       <button
-                        onClick={() => gerarPDF(order)}
-                        className="text-green-600 hover:text-green-900 mr-3"
-                      >
-                        📄 PDF
-                      </button>
-                      <button
                         disabled={busyId === order.id}
                         onClick={() => generateAndStorePDF(order)}
                         className="text-indigo-600 hover:text-indigo-900 mr-3 disabled:opacity-50"
                       >
                         💾 Salvar PDF
+                      </button>
+                      <button
+                        disabled={busyId === order.id}
+                        onClick={() => deletePDF(order)}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                      >
+                        🗑️ Excluir PDF
                       </button>
                       <button
                         disabled={busyId === order.id}

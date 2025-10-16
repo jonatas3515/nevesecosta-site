@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
 
     // Try to use stored Stripe price from Supabase products; auto-provision if missing
     let stripePriceId: string | null = null
+    let chosenAmount = 7500
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -46,18 +47,23 @@ export async function POST(req: NextRequest) {
           .eq('active', true)
           .maybeSingle()
 
+        if (productRow) {
+          chosenAmount = typeof productRow.promo_price_cents === 'number' && productRow.promo_price_cents > 0 ? productRow.promo_price_cents : productRow.price_cents || 7500
+        }
+
         if (productRow?.stripe_price_id) {
           stripePriceId = productRow.stripe_price_id
         } else {
           // Ensure Stripe product and price exist
           const product = await stripe.products.create({ name: 'Cálculo em PDF' })
-          const price = await stripe.prices.create({ unit_amount: 7500, currency: 'brl', product: product.id })
+          const price = await stripe.prices.create({ unit_amount: chosenAmount, currency: 'brl', product: product.id })
           stripePriceId = price.id
           // Persist for next runs
           await supabase.from('products').upsert({
             id: productRow?.id,
             name: 'Cálculo em PDF',
-            price_cents: 7500,
+            price_cents: productRow?.price_cents || 7500,
+            promo_price_cents: productRow?.promo_price_cents ?? null,
             active: true,
             stripe_product_id: product.id,
             stripe_price_id: price.id,
@@ -80,7 +86,7 @@ export async function POST(req: NextRequest) {
                 name: 'Download de PDF do Cálculo de Rescisão',
                 description: 'Valor simbólico para manter o site no ar. Obrigado pelo apoio!',
               },
-              unit_amount: 7500,
+              unit_amount: chosenAmount,
             },
             quantity: 1,
           } ],
@@ -100,7 +106,7 @@ export async function POST(req: NextRequest) {
       const { error: insertError } = await supabase.from('orders').insert({
         session_id: session.id,
         status: 'pending',
-        amount: 7500,
+        amount: chosenAmount,
         payment_method: 'card',
         calc_data: calc,
       })

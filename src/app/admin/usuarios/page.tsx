@@ -25,8 +25,10 @@ export default function AdminUsuariosPage() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  const [createForm, setCreateForm] = useState<{ email: string; password: string; role: string; perms: Perms }>({ email: '', password: '', role: 'editor', perms: { ...emptyPerms } })
-  const [editForm, setEditForm] = useState<{ user_id: string; email?: string; password?: string; role?: string; perms: Perms | null }>({ user_id: '', email: '', password: '', role: undefined, perms: null })
+  const [createForm, setCreateForm] = useState<{ email: string; password: string; role: string; perms: Perms; username?: string; phone?: string; cpf?: string }>({ email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '' })
+  const [editForm, setEditForm] = useState<{ user_id: string; email?: string; password?: string; role?: string; perms: Perms | null; username?: string; phone?: string; cpf?: string }>({ user_id: '', email: '', password: '', role: undefined, perms: null, username: '', phone: '', cpf: '' })
+  const [showPwdCreate, setShowPwdCreate] = useState(false)
+  const [showPwdEdit, setShowPwdEdit] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -42,10 +44,10 @@ export default function AdminUsuariosPage() {
     e.preventDefault()
     setSaving(true)
     try {
-      const r = await fetch('/api/admin/users/create', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: createForm.email, password: createForm.password, role: createForm.role, permissions: createForm.perms }) })
+      const r = await fetch('/api/admin/users/create', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: createForm.email, password: createForm.password, role: createForm.role, permissions: createForm.perms, username: createForm.username, phone: createForm.phone, cpf: createForm.cpf }) })
       const j = await r.json()
       if (!r.ok) { alert(j.error || 'Falha ao criar usuário'); return }
-      setCreateForm({ email: '', password: '', role: 'editor', perms: { ...emptyPerms } })
+      setCreateForm({ email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '' })
       await load()
       alert('Usuário criado com sucesso')
     } catch (e: any) {
@@ -63,10 +65,13 @@ export default function AdminUsuariosPage() {
       if (editForm.password) payload.password = editForm.password
       if (editForm.role) payload.role = editForm.role
       if (editForm.perms) payload.permissions = editForm.perms
+      if (editForm.username) payload.username = editForm.username
+      if (editForm.phone) payload.phone = editForm.phone
+      if (editForm.cpf) payload.cpf = editForm.cpf
       const r = await fetch('/api/admin/users/update', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
       const j = await r.json()
       if (!r.ok) { alert(j.error || 'Falha ao atualizar usuário'); return }
-      setEditForm({ user_id: '', email: '', password: '', role: undefined, perms: null })
+      setEditForm({ user_id: '', email: '', password: '', role: undefined, perms: null, username: '', phone: '', cpf: '' })
       await load()
       alert('Usuário atualizado com sucesso')
     } catch (e: any) {
@@ -85,8 +90,24 @@ export default function AdminUsuariosPage() {
           <input value={createForm.email} onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))} className="w-full border rounded-md px-3 py-2" required />
         </div>
         <div>
+          <label className="block text-sm font-medium mb-1">Usuário</label>
+          <input value={createForm.username || ''} onChange={e => setCreateForm(f => ({ ...f, username: e.target.value }))} className="w-full border rounded-md px-3 py-2" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Telefone</label>
+          <input value={createForm.phone || ''} onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))} className="w-full border rounded-md px-3 py-2" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">CPF</label>
+          <input value={createForm.cpf || ''} onChange={e => setCreateForm(f => ({ ...f, cpf: e.target.value }))} className="w-full border rounded-md px-3 py-2" />
+        </div>
+        <div>
           <label className="block text-sm font-medium mb-1">Senha</label>
-          <input type="password" value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} className="w-full border rounded-md px-3 py-2" required />
+          <div className="relative">
+            <input type={showPwdCreate ? 'text' : 'password'} value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} className="w-full border rounded-md px-3 py-2 pr-10" required minLength={7} />
+            <button type="button" onClick={() => setShowPwdCreate(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-600">{showPwdCreate ? '🙈' : '👁️'}</button>
+          </div>
+          <div className="text-xs text-gray-500 mt-1">Mínimo 7 caracteres</div>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Função (role)</label>
@@ -119,8 +140,24 @@ export default function AdminUsuariosPage() {
             <input value={editForm.email || ''} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} className="w-full border rounded-md px-3 py-2" />
           </div>
           <div>
+            <label className="block text-sm font-medium mb-1">Usuário</label>
+            <input value={editForm.username || ''} onChange={e => setEditForm(f => ({ ...f, username: e.target.value }))} className="w-full border rounded-md px-3 py-2" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Telefone</label>
+            <input value={editForm.phone || ''} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} className="w-full border rounded-md px-3 py-2" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">CPF</label>
+            <input value={editForm.cpf || ''} onChange={e => setEditForm(f => ({ ...f, cpf: e.target.value }))} className="w-full border rounded-md px-3 py-2" />
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1">Nova Senha</label>
-            <input type="password" value={editForm.password || ''} onChange={e => setEditForm(f => ({ ...f, password: e.target.value }))} className="w-full border rounded-md px-3 py-2" />
+            <div className="relative">
+              <input type={showPwdEdit ? 'text' : 'password'} value={editForm.password || ''} onChange={e => setEditForm(f => ({ ...f, password: e.target.value }))} className="w-full border rounded-md px-3 py-2 pr-10" minLength={7} />
+              <button type="button" onClick={() => setShowPwdEdit(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-600">{showPwdEdit ? '🙈' : '👁️'}</button>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">Mínimo 7 caracteres</div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Função (role)</label>
@@ -163,7 +200,7 @@ export default function AdminUsuariosPage() {
               <div className="text-xs text-gray-600">Permissões: {u.permissions ? Object.entries(u.permissions).filter(([k]) => k !== 'user_id').map(([k,v]) => v ? k : null).filter(Boolean).join(', ') : '(nenhuma)'}</div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setEditForm({ user_id: u.id, email: u.email, password: '', role: u.role || undefined, perms: u.permissions ? { is_admin: !!u.permissions.is_admin, can_posts: !!u.permissions.can_posts, can_reviews: !!u.permissions.can_reviews, can_orders: !!u.permissions.can_orders, can_products: !!u.permissions.can_products } : { ...emptyPerms } })} className="px-3 py-1 text-sm border rounded">Editar</button>
+              <button onClick={() => setEditForm({ user_id: u.id, email: u.email, password: '', role: u.role || undefined, perms: u.permissions ? { is_admin: !!u.permissions.is_admin, can_posts: !!u.permissions.can_posts, can_reviews: !!u.permissions.can_reviews, can_orders: !!u.permissions.can_orders, can_products: !!u.permissions.can_products } : { ...emptyPerms }, username: '', phone: '', cpf: '' })} className="px-3 py-1 text-sm border rounded">Editar</button>
             </div>
           </div>
         ))}

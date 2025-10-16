@@ -47,9 +47,22 @@ export async function POST(req: NextRequest) {
       const product = await stripe.products.create({ name, images: image_url ? [image_url] : undefined })
       stripe_product_id = product.id
     }
+    const desiredAmount = (typeof promo_price_cents === 'number' && promo_price_cents > 0) ? promo_price_cents : price_cents
     if (!stripe_price_id) {
-      const price = await stripe.prices.create({ unit_amount: price_cents, currency: 'brl', product: stripe_product_id! })
+      const price = await stripe.prices.create({ unit_amount: desiredAmount, currency: 'brl', product: stripe_product_id! })
       stripe_price_id = price.id
+    } else {
+      // Best-effort: ensure price matches desired amount; if not, create new price and replace
+      try {
+        const existing = await stripe.prices.retrieve(stripe_price_id)
+        if ((existing.unit_amount || 0) !== desiredAmount) {
+          const newPrice = await stripe.prices.create({ unit_amount: desiredAmount, currency: 'brl', product: stripe_product_id! })
+          stripe_price_id = newPrice.id
+        }
+      } catch {
+        const price = await stripe.prices.create({ unit_amount: desiredAmount, currency: 'brl', product: stripe_product_id! })
+        stripe_price_id = price.id
+      }
     }
 
     const upsertPayload = {
