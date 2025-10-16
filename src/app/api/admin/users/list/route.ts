@@ -20,17 +20,23 @@ export async function GET(req: NextRequest) {
     const { data: perms } = await supabase.from('admin_permissions').select('*')
     const permsMap = new Map((perms || []).map((p: any) => [p.user_id, p]))
 
-    // Load profiles roles
-    const { data: profiles } = await supabase.from('profiles').select('id, role')
-    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p.role]))
+    // Load profiles with all fields
+    const { data: profiles } = await supabase.from('profiles').select('id, role, username, phone, cpf, email')
+    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]))
 
-    const items = (usersData?.users || []).map((u: any) => ({
-      id: u.id,
-      email: u.email,
-      created_at: u.created_at,
-      role: profileMap.get(u.id) || null,
-      permissions: permsMap.get(u.id) || null,
-    }))
+    const items = (usersData?.users || []).map((u: any) => {
+      const profile = profileMap.get(u.id)
+      return {
+        id: u.id,
+        email: u.email,
+        created_at: u.created_at,
+        role: profile?.role || null,
+        username: profile?.username || null,
+        phone: profile?.phone || null,
+        cpf: profile?.cpf || null,
+        permissions: permsMap.get(u.id) || null,
+      }
+    })
 
     return new Response(JSON.stringify({ items }), { status: 200, headers: { 'content-type': 'application/json' } })
   } catch (e: any) {

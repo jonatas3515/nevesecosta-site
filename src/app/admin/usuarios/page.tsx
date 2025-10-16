@@ -15,6 +15,9 @@ type UserRow = {
   email: string
   created_at: string
   role: string | null
+  username: string | null
+  phone: string | null
+  cpf: string | null
   permissions: (Perms & { user_id: string }) | null
 }
 
@@ -217,11 +220,14 @@ export default function AdminUsuariosPage() {
               <div className="font-medium">{u.email}</div>
               <div className="text-xs text-gray-500">Criado em {new Date(u.created_at).toLocaleString('pt-BR')}</div>
               <div className="text-xs">Role: {u.role || '-'}</div>
+              {u.username && <div className="text-xs text-gray-600">Usuário: {u.username}</div>}
+              {u.phone && <div className="text-xs text-gray-600">Telefone: {u.phone}</div>}
+              {u.cpf && <div className="text-xs text-gray-600">CPF: {u.cpf}</div>}
               <div className="text-xs text-gray-600">Permissões: {u.permissions ? Object.entries(u.permissions).filter(([k]) => k !== 'user_id').map(([k,v]) => v ? k : null).filter(Boolean).join(', ') : '(nenhuma)'}</div>
               <div className="text-xs text-gray-500">Senha: ********** (criptografada)</div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setEditForm({ user_id: u.id, email: u.email, password: '', role: u.role || undefined, perms: u.permissions ? { is_admin: !!u.permissions.is_admin, can_posts: !!u.permissions.can_posts, can_reviews: !!u.permissions.can_reviews, can_orders: !!u.permissions.can_orders, can_products: !!u.permissions.can_products } : { ...emptyPerms }, username: '', phone: '', cpf: '' })} className="px-3 py-1 text-sm border rounded">Editar</button>
+              <button onClick={() => setEditForm({ user_id: u.id, email: u.email, password: '', role: u.role || 'editor', perms: u.permissions ? { is_admin: !!u.permissions.is_admin, can_posts: !!u.permissions.can_posts, can_reviews: !!u.permissions.can_reviews, can_orders: !!u.permissions.can_orders, can_products: !!u.permissions.can_products } : { ...emptyPerms }, username: u.username || '', phone: u.phone || '', cpf: u.cpf || '' })} className="px-3 py-1 text-sm border rounded">Editar</button>
             </div>
           </div>
         ))}

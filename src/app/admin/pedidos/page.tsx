@@ -109,29 +109,8 @@ export default function PedidosPage() {
   }
 
   const generateAndStorePDF = async (order: Order) => {
-    try {
-      setBusyId(order.id)
-      const res = await fetch('/api/admin/orders/generate-pdf', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ id: order.id })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(String(data?.error || data))
-      // Após gerar, baixar o arquivo
-      const url = new URL('/api/admin/orders/signed-url', window.location.origin)
-      url.searchParams.set('id', order.id)
-      const r2 = await fetch(url.toString())
-      const j2 = await r2.json()
-      if (r2.ok && j2?.url) {
-        window.open(j2.url, '_blank')
-      }
-      alert('PDF gerado e baixado com sucesso!')
-    } catch (e: any) {
-      alert('Falha ao gerar PDF: ' + (e?.message || e))
-    } finally {
-      setBusyId('')
-    }
+    // Use the same logic as gerarPDF for direct download
+    gerarPDF(order)
   }
 
   const deletePDF = async (order: Order) => {

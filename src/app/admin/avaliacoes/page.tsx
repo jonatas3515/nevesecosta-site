@@ -28,11 +28,16 @@ export default function AdminAvaliacoesPage() {
 
   const remove = async (id?: string) => {
     if (!id) return
-    if (!confirm('Excluir esta avaliação?')) return
-    const r = await fetch('/api/admin/reviews/delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id }) })
-    const j = await r.json()
-    if (!r.ok) { alert(j.error || 'Falha ao excluir'); return }
-    await load()
+    if (!confirm('Tem certeza que deseja excluir esta avaliação?')) return
+    try {
+      const r = await fetch('/api/admin/reviews/delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id }) })
+      const j = await r.json()
+      if (!r.ok) { alert(j.error || 'Falha ao excluir'); return }
+      alert('Avaliação excluída com sucesso')
+      await load()
+    } catch (e: any) {
+      alert('Erro ao excluir: ' + (e?.message || e))
+    }
   }
 
   const submit = async (e: React.FormEvent) => {

@@ -81,9 +81,10 @@ export default function AdminProdutosPage() {
 
   const del = async (id?: string) => {
     if (!id) return
-    if (!confirm('Desativar este produto?')) return
+    if (!confirm('Tem certeza que deseja desativar este produto?')) return
     const r = await fetch('/api/admin/products/delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id }) })
     if (!r.ok) { const j = await r.json(); alert(j.error || 'Falha ao desativar'); return }
+    alert('Produto desativado com sucesso')
     await load()
   }
 
