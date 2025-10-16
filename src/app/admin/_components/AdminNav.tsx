@@ -10,6 +10,9 @@ const links = [
   { href: "/admin/posts/novo", label: "Novo Post" },
   { href: "/admin/categorias", label: "Categorias" },
   { href: "/admin/comentarios", label: "Comentários" },
+  { href: "/admin/produtos", label: "Produtos" },
+  { href: "/admin/avaliacoes", label: "Avaliações" },
+  { href: "/admin/usuarios", label: "Usuários" },
 ];
 
 export function AdminNav() {

@@ -491,14 +491,12 @@ export default function PedidosPage() {
                       >
                         👁️ Ver
                       </button>
-                      {order.status === 'paid' && (
-                        <button
-                          onClick={() => gerarPDF(order)}
-                          className="text-green-600 hover:text-green-900 mr-3"
-                        >
-                          📄 PDF
-                        </button>
-                      )}
+                      <button
+                        onClick={() => gerarPDF(order)}
+                        className="text-green-600 hover:text-green-900 mr-3"
+                      >
+                        📄 PDF
+                      </button>
                       <button
                         disabled={busyId === order.id}
                         onClick={() => generateAndStorePDF(order)}
@@ -579,17 +577,15 @@ export default function PedidosPage() {
                 >
                   Fechar
                 </button>
-                {selectedOrder.status === 'paid' && (
-                  <button
-                    onClick={() => {
-                      gerarPDF(selectedOrder)
-                      setShowModal(false)
-                    }}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    📄 Gerar PDF
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    gerarPDF(selectedOrder)
+                    setShowModal(false)
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  📄 Gerar PDF
+                </button>
               </div>
             </div>
           </div>
