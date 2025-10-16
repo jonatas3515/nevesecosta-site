@@ -32,21 +32,58 @@ export async function POST(req: NextRequest) {
     console.log('[create-session] SITE_URL length:', siteUrl.length)
     console.log('[create-session] Creating checkout session...')
 
+    // Try to use stored Stripe price from Supabase products; auto-provision if missing
+    let stripePriceId: string | null = null
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (supabaseUrl && supabaseServiceKey) {
+        const supabase = createClient(supabaseUrl, supabaseServiceKey)
+        const { data: productRow } = await supabase
+          .from('products')
+          .select('*')
+          .eq('name', 'Cálculo em PDF')
+          .eq('active', true)
+          .maybeSingle()
+
+        if (productRow?.stripe_price_id) {
+          stripePriceId = productRow.stripe_price_id
+        } else {
+          // Ensure Stripe product and price exist
+          const product = await stripe.products.create({ name: 'Cálculo em PDF' })
+          const price = await stripe.prices.create({ unit_amount: 7500, currency: 'brl', product: product.id })
+          stripePriceId = price.id
+          // Persist for next runs
+          await supabase.from('products').upsert({
+            id: productRow?.id,
+            name: 'Cálculo em PDF',
+            price_cents: 7500,
+            active: true,
+            stripe_product_id: product.id,
+            stripe_price_id: price.id,
+            updated_at: new Date().toISOString(),
+          })
+        }
+      }
+    } catch (err) {
+      console.error('[create-session] Failed ensuring product/price in Supabase/Stripe, proceeding with inline price_data', err)
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      line_items: [
-        {
-          price_data: {
-            currency: 'brl',
-            product_data: {
-              name: 'Download de PDF do Cálculo de Rescisão',
-              description: 'Valor simbólico para manter o site no ar. Obrigado pelo apoio!',
+      line_items: stripePriceId
+        ? [ { price: stripePriceId, quantity: 1 } ]
+        : [ {
+            price_data: {
+              currency: 'brl',
+              product_data: {
+                name: 'Download de PDF do Cálculo de Rescisão',
+                description: 'Valor simbólico para manter o site no ar. Obrigado pelo apoio!',
+              },
+              unit_amount: 7500,
             },
-            unit_amount: 7500, // R$ 75,00 em centavos
-          },
-          quantity: 1,
-        },
-      ],
+            quantity: 1,
+          } ],
       payment_method_types: ['card'],
       success_url: `${siteUrl}/calculadora?paid=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/calculadora?canceled=1`,
