@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Calculator, DollarSign, Calendar, FileText, Download } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function CalculadoraRescisoria() {
   const [formData, setFormData] = useState({
@@ -18,6 +19,83 @@ export default function CalculadoraRescisoria() {
   })
 
   const [resultado, setResultado] = useState<any>(null)
+  const [showPayModal, setShowPayModal] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix'>('card')
+  const [canDownload, setCanDownload] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    
+    const checkAdmin = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!mounted) return
+        
+        if (session) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single()
+          
+          if (mounted && profile && ['admin', 'editor'].includes(profile.role)) {
+            setIsAdmin(true)
+            setCanDownload(true)
+          }
+        }
+      } catch (err) {
+        console.error('[calculadora] Error checking admin:', err)
+      }
+    }
+
+    const checkPayment = async () => {
+      const params = new URLSearchParams(window.location.search)
+      const paid = params.get('paid')
+      const sessionId = params.get('session_id')
+      console.log('[calculadora] URL params:', { paid, sessionId })
+      
+      if (paid && sessionId) {
+        try {
+          setVerifying(true)
+          console.log('[calculadora] Verifying payment...')
+          const res = await fetch(`/api/payments/verify?session_id=${encodeURIComponent(sessionId)}`)
+          console.log('[calculadora] Verify response:', res.status, res.ok)
+          const data = await res.json()
+          console.log('[calculadora] Verify data:', data)
+          
+          if (!mounted) return
+          
+          if (data.paid && data.calc) {
+            setResultado(data.calc)
+            setCanDownload(true)
+            setTimeout(() => {
+              gerarPDFComDados(data.calc)
+            }, 500)
+          } else {
+            alert('Pagamento não confirmado. Tente novamente ou entre em contato.')
+          }
+        } catch (err) {
+          console.error('[calculadora] Error:', err)
+          if (mounted) {
+            alert('Erro ao verificar pagamento. Tente novamente.')
+          }
+        } finally {
+          if (mounted) {
+            setVerifying(false)
+          }
+        }
+      }
+    }
+
+    checkAdmin()
+    checkPayment()
+    
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const calcularRescisao = () => {
     const salario = parseFloat(formData.salario) || 0
@@ -152,16 +230,15 @@ export default function CalculadoraRescisoria() {
     }).format(value)
   }
 
-  const gerarPDF = () => {
-    if (!resultado) return
+  const gerarPDFComDados = (calc: any) => {
+    if (!calc) return
     
-    // Criar conteúdo HTML para impressão/PDF
     const conteudoHTML = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Cálculo de Rescisão - ${resultado.nomeFuncionario}</title>
+        <title>Cálculo de Rescisão - ${calc.nomeFuncionario}</title>
         <style>
           body {
             font-family: Arial, sans-serif;
@@ -247,65 +324,65 @@ export default function CalculadoraRescisoria() {
           <div class="section-title">DADOS DO FUNCIONÁRIO</div>
           <div class="data-row">
             <span>Nome:</span>
-            <span>${resultado.nomeFuncionario}</span>
+            <span>${calc.nomeFuncionario}</span>
           </div>
           <div class="data-row">
             <span>Empresa:</span>
-            <span>${resultado.nomeEmpresa}</span>
+            <span>${calc.nomeEmpresa}</span>
           </div>
           <div class="data-row">
             <span>Data de Admissão:</span>
-            <span>${resultado.dataAdmissao}</span>
+            <span>${calc.dataAdmissao}</span>
           </div>
           <div class="data-row">
             <span>Data de Demissão:</span>
-            <span>${resultado.dataDemissao}</span>
+            <span>${calc.dataDemissao}</span>
           </div>
           <div class="data-row">
             <span>Tempo Trabalhado:</span>
-            <span>${resultado.tempoTrabalhado}</span>
+            <span>${calc.tempoTrabalhado}</span>
           </div>
           <div class="data-row">
             <span>Salário:</span>
-            <span>${formatCurrency(resultado.salario)}</span>
+            <span>${formatCurrency(calc.salario)}</span>
           </div>
         </div>
 
         <div class="section">
           <div class="section-title">CÁLCULO DA RESCISÃO</div>
           <div class="data-row">
-            <span>Saldo de Salário (${resultado.diasUltimoMes} dias):</span>
-            <span>${formatCurrency(resultado.saldoSalario)}</span>
+            <span>Saldo de Salário (${calc.diasUltimoMes} dias):</span>
+            <span>${formatCurrency(calc.saldoSalario)}</span>
           </div>
           <div class="data-row">
             <span>Aviso Prévio:</span>
-            <span>${formatCurrency(resultado.avisoPrevio)}</span>
+            <span>${formatCurrency(calc.avisoPrevio)}</span>
           </div>
           <div class="data-row">
             <span>13º Proporcional:</span>
-            <span>${formatCurrency(resultado.decimoTerceiro)}</span>
+            <span>${formatCurrency(calc.decimoTerceiro)}</span>
           </div>
           <div class="data-row">
             <span>Férias + 1/3:</span>
-            <span>${formatCurrency(resultado.ferias)}</span>
+            <span>${formatCurrency(calc.ferias)}</span>
           </div>
           <div class="data-row">
             <span>Multa FGTS (40%):</span>
-            <span>${formatCurrency(resultado.multaFgts)}</span>
+            <span>${formatCurrency(calc.multaFgts)}</span>
           </div>
-          ${resultado.salarioFamilia > 0 ? `
+          ${calc.salarioFamilia > 0 ? `
           <div class="data-row">
             <span>Salário Família:</span>
-            <span>${formatCurrency(resultado.salarioFamilia)}</span>
+            <span>${formatCurrency(calc.salarioFamilia)}</span>
           </div>` : ''}
           <div class="data-row" style="color: #dc2626; border-color: #dc2626;">
             <span>Desconto INSS:</span>
-            <span>- ${formatCurrency(resultado.descontoINSS)}</span>
+            <span>- ${formatCurrency(calc.descontoINSS)}</span>
           </div>
         </div>
 
         <div class="total">
-          TOTAL LÍQUIDO: ${formatCurrency(resultado.total)}
+          TOTAL LÍQUIDO: ${formatCurrency(calc.total)}
         </div>
 
         <div class="disclaimer">
@@ -332,11 +409,50 @@ export default function CalculadoraRescisoria() {
       </html>
     `
     
-    // Abrir nova janela com o conteúdo para impressão
     const novaJanela = window.open('', '_blank')
     if (novaJanela) {
       novaJanela.document.write(conteudoHTML)
       novaJanela.document.close()
+    }
+  }
+
+  const gerarPDF = () => {
+    if (!resultado) return
+    if (!canDownload && !isAdmin) {
+      setShowPayModal(true)
+      return
+    }
+    gerarPDFComDados(resultado)
+  }
+
+  const iniciarPagamento = async () => {
+    if (!resultado) return
+    if (paymentMethod === 'pix') {
+      alert('Pix temporariamente indisponível. Por favor, escolha pagamento por cartão.')
+      return
+    }
+    const endpoint = '/api/payments/stripe/create-session'
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ calc: resultado }),
+      })
+      const text = await resp.text()
+      let data: any = {}
+      try { data = JSON.parse(text) } catch {}
+      if (!resp.ok) {
+        const msg = data?.error || text || 'Falha ao iniciar checkout.'
+        alert('Erro ao iniciar pagamento: ' + msg)
+        return
+      }
+      if (data?.url) {
+        window.location.href = data.url
+      } else {
+        alert('Resposta inválida do servidor ao criar sessão de pagamento.')
+      }
+    } catch (e: any) {
+      alert('Erro de rede ao iniciar pagamento: ' + (e?.message || e))
     }
   }
 
@@ -621,7 +737,7 @@ export default function CalculadoraRescisoria() {
                       className="inline-flex items-center justify-center bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                     >
                       <FileText className="mr-2" size={20} />
-                      Imprimir PDF
+                      {canDownload ? 'Imprimir PDF' : 'Baixar PDF'}
                     </button>
                     <button
                       onClick={consultarWhatsApp}
@@ -659,6 +775,77 @@ export default function CalculadoraRescisoria() {
             </p>
           </div>
         </div>
+      </div>
+      {/* Modal de Pagamento */}
+      <PayModal
+        open={showPayModal}
+        onClose={() => setShowPayModal(false)}
+        onConfirm={iniciarPagamento}
+        verifying={verifying}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+      />
+    </div>
+  )
+}
+
+// Modal de Pagamento
+// Inserido no final para manter o arquivo com um único export default acima
+function PayModal({ open, onClose, onConfirm, verifying, paymentMethod, setPaymentMethod }: {
+  open: boolean,
+  onClose: () => void,
+  onConfirm: () => void,
+  verifying?: boolean,
+  paymentMethod: 'card' | 'pix',
+  setPaymentMethod: (method: 'card' | 'pix') => void,
+}) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <div className="bg-white w-full max-w-md rounded-xl p-6 text-gray-900">
+        <h3 className="text-xl font-bold mb-2">Baixar PDF do Cálculo</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Para baixar o PDF do seu cálculo de rescisão, é necessário um pagamento simbólico de <strong>R$ 75,00</strong>.
+          Este valor ajuda a manter o site no ar e oferecer ferramentas gratuitas para todos.
+        </p>
+        <p className="text-sm text-gray-600 mb-4">
+          Você poderá pagar com <strong>cartão de crédito</strong> ou <strong>Pix</strong> de forma segura via Stripe.
+        </p>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">Escolha a forma de pagamento:</label>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setPaymentMethod('card')}
+              className={`flex-1 px-4 py-3 rounded-md border-2 transition-colors ${
+                paymentMethod === 'card'
+                  ? 'border-primary-600 bg-primary-50 text-primary-700'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              💳 Cartão
+            </button>
+            <button
+              onClick={() => setPaymentMethod('pix')}
+              className={`flex-1 px-4 py-3 rounded-md border-2 transition-colors ${
+                paymentMethod === 'pix'
+                  ? 'border-primary-600 bg-primary-50 text-primary-700'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              💱 Pix
+            </button>
+          </div>
+        </div>
+        {paymentMethod === 'pix' && (
+          <div className="mb-4 text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-md p-3">
+            Pix temporariamente indisponível. Por favor, utilize pagamento por cartão.
+          </div>
+        )}
+        <div className="flex gap-3 mt-5 justify-end">
+          <button onClick={onClose} className="px-4 py-2 border rounded-md">Cancelar</button>
+          <button onClick={onConfirm} disabled={paymentMethod === 'pix'} className={`px-4 py-2 rounded-md text-white ${paymentMethod === 'pix' ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary-600'}`}>Fazer Pagamento</button>
+        </div>
+        {verifying && <div className="text-sm text-gray-500 mt-2">Verificando pagamento...</div>}
       </div>
     </div>
   )

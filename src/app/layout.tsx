@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   title: 'Neves & Costa Advocacia | Do Seu Direito, A Gente Cuida',
   description: 'Escritório de advocacia 100% digital do Extremo Sul da Bahia. Especializado em Direito Civil, Trabalhista, Previdenciário e do Consumidor. Atendimento em todo o Brasil.',
   keywords: 'advocacia, advogado, direito, jurídico, Bahia, advocacia digital, direito civil, direito trabalhista, direito previdenciário, direito do consumidor',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 }
 
 export default function RootLayout({

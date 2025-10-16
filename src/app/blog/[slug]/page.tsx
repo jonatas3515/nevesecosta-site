@@ -1,31 +1,130 @@
+
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { Calendar, Clock, User, ArrowLeft, MessageCircle, Send } from 'lucide-react'
-import { blogPosts } from '@/data/blogPosts'
 import { formatDate } from '@/lib/utils'
+import { supabase } from '@/lib/supabaseClient'
+import MarkdownIt from 'markdown-it'
 
-interface Comment {
-  id: number
+interface UiComment {
+  id: string
   author: string
   date: string
   content: string
-  replies?: Comment[]
+  replies?: UiComment[]
+  isStaff?: boolean
 }
 
 export default function BlogPostPage() {
   const params = useParams()
-  const post = blogPosts.find(p => p.slug === params.slug)
-  
-  const [comments, setComments] = useState<Comment[]>([])
+  const slug = String(params.slug)
+
+  const [post, setPost] = useState<{
+    id: string
+    title: string
+    subtitle?: string
+    slug: string
+    cover_url?: string
+    content_html?: string
+    published_at?: string
+    created_at: string
+    read_time?: string
+    category?: string
+    author?: string
+  } | null>(null)
+
+  const [comments, setComments] = useState<UiComment[]>([])
+  const [loading, setLoading] = useState(true)
 
   const [newComment, setNewComment] = useState({ author: '', content: '' })
-  const [replyTo, setReplyTo] = useState<number | null>(null)
+  const [replyTo, setReplyTo] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState('')
 
-  if (!post) {
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      // Buscar post pelo slug
+      const { data: p, error } = await supabase
+        .from('posts')
+        .select('id, title, subtitle, slug, cover_url, content_html, content_md, published_at, created_at, author_name')
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .single()
+
+      if (error || !p) {
+        setPost(null)
+        setLoading(false)
+        return
+      }
+
+      // Buscar uma categoria principal (opcional)
+      const { data: pc } = await supabase
+        .from('post_categories')
+        .select('category:categories(name)')
+        .eq('post_id', p.id)
+
+      const category = pc && pc.length > 0 ? (pc[0] as any).category?.name ?? 'Geral' : 'Geral'
+
+      // Fallback: se content_html vier vazio ou com mensagem de erro, gerar localmente a partir de content_md
+      let html: string | undefined = p.content_html
+      if (!html || /Erro ao converter markdown/i.test(html)) {
+        try {
+          const md = new MarkdownIt({ html: true, linkify: true, typographer: true })
+          html = md.render(p.content_md || '')
+        } catch {}
+      }
+
+      setPost({
+        id: p.id,
+        title: p.title,
+        subtitle: p.subtitle,
+        slug: p.slug,
+        cover_url: p.cover_url,
+        content_html: html,
+        published_at: p.published_at,
+        created_at: p.created_at,
+        read_time: '5 min',
+        category,
+        author: (p as any).author_name || 'Equipe Neves & Costa',
+      })
+
+      // Comentários aprovados (inclui respostas da equipe)
+      const { data: cmts } = await supabase
+        .from('comments')
+        .select('id, parent_id, author_name, content, created_at, is_staff_reply')
+        .eq('post_id', p.id)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: true })
+
+      const byId = new Map<string, UiComment>()
+      const roots: UiComment[] = []
+      ;(cmts || []).forEach((c: any) => {
+        byId.set(c.id, {
+          id: c.id,
+          author: c.author_name || (c.is_staff_reply ? 'Equipe Neves & Costa' : 'Visitante'),
+          date: c.created_at,
+          content: c.content,
+          replies: [],
+          isStaff: !!c.is_staff_reply,
+        })
+      })
+      ;(cmts || []).forEach((c: any) => {
+        if (c.parent_id && byId.has(c.parent_id)) {
+          byId.get(c.parent_id)!.replies!.push(byId.get(c.id)!)
+        } else {
+          roots.push(byId.get(c.id)!)
+        }
+      })
+      setComments(roots)
+      setLoading(false)
+    }
+    load()
+  }, [slug])
+
+  if (!loading && !post) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -38,42 +137,94 @@ export default function BlogPostPage() {
     )
   }
 
-  const handleCommentSubmit = (e: React.FormEvent) => {
+  const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (newComment.author && newComment.content) {
-      const comment: Comment = {
-        id: comments.length + 1,
-        author: newComment.author,
-        date: new Date().toISOString().split('T')[0],
-        content: newComment.content,
-      }
-      setComments([...comments, comment])
-      setNewComment({ author: '', content: '' })
+    if (!post) return
+    if (!newComment.author || !newComment.content) return
+
+    // Insere como aprovado para aparecer instantaneamente
+    const { data, error } = await supabase.from('comments').insert({
+      post_id: post.id,
+      author_name: newComment.author,
+      content: newComment.content,
+      status: 'approved', // Aprovado automaticamente para aparecer na hora
+    }).select().single()
+
+    if (error) {
+      console.error('Erro ao enviar comentário:', error)
+      alert('Erro ao enviar comentário. Tente novamente.')
+      return
     }
+
+    // Adiciona o comentário à lista imediatamente
+    if (data) {
+      const newUiComment: UiComment = {
+        id: data.id,
+        author: data.author_name || 'Visitante',
+        date: data.created_at,
+        content: data.content,
+        replies: [],
+        isStaff: false,
+      }
+      setComments([...comments, newUiComment])
+    }
+
+    setNewComment({ author: '', content: '' })
+    alert('Comentário publicado com sucesso!')
   }
 
-  const handleReplySubmit = (commentId: number) => {
-    if (replyContent) {
-      const reply: Comment = {
-        id: Date.now(),
-        author: 'Você',
-        date: new Date().toISOString().split('T')[0],
-        content: replyContent,
-      }
-      
-      setComments(comments.map(comment => {
-        if (comment.id === commentId) {
-          return {
-            ...comment,
-            replies: [...(comment.replies || []), reply]
-          }
-        }
-        return comment
-      }))
-      
-      setReplyContent('')
-      setReplyTo(null)
+  const handleReplySubmit = async (commentId: string) => {
+    if (!replyContent || !post) return
+
+    // Insere resposta como aprovada
+    const { data, error } = await supabase.from('comments').insert({
+      post_id: post.id,
+      parent_id: commentId,
+      author_name: 'Visitante',
+      content: replyContent,
+      status: 'approved',
+    }).select().single()
+
+    if (error) {
+      console.error('Erro ao enviar resposta:', error)
+      alert('Erro ao enviar resposta. Tente novamente.')
+      return
     }
+
+    // Recarrega comentários para mostrar a resposta
+    if (data) {
+      const { data: cmts } = await supabase
+        .from('comments')
+        .select('id, parent_id, author_name, content, created_at, is_staff_reply')
+        .eq('post_id', post.id)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: true })
+
+      const byId = new Map<string, UiComment>()
+      const roots: UiComment[] = []
+      ;(cmts || []).forEach((c: any) => {
+        byId.set(c.id, {
+          id: c.id,
+          author: c.author_name || (c.is_staff_reply ? 'Equipe Neves & Costa' : 'Visitante'),
+          date: c.created_at,
+          content: c.content,
+          replies: [],
+          isStaff: !!c.is_staff_reply,
+        })
+      })
+      ;(cmts || []).forEach((c: any) => {
+        if (c.parent_id && byId.has(c.parent_id)) {
+          byId.get(c.parent_id)!.replies!.push(byId.get(c.id)!)
+        } else {
+          roots.push(byId.get(c.id)!)
+        }
+      })
+      setComments(roots)
+    }
+
+    setReplyContent('')
+    setReplyTo(null)
+    alert('Resposta publicada com sucesso!')
   }
 
   return (
@@ -90,25 +241,27 @@ export default function BlogPostPage() {
           </Link>
           
           <div className="max-w-4xl">
-            <span className="inline-block bg-gold-500 text-gray-900 px-4 py-1 rounded-full text-sm font-semibold mb-4">
-              {post.category}
-            </span>
+            {post && (
+              <span className="inline-block bg-gold-500 text-gray-900 px-4 py-1 rounded-full text-sm font-semibold mb-4">
+                {post.category}
+              </span>
+            )}
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              {post.title}
+              {post?.title || 'Carregando...'}
             </h1>
             
             <div className="flex flex-wrap items-center gap-6 text-gray-200">
               <div className="flex items-center space-x-2">
                 <User size={20} />
-                <span>{post.author}</span>
+                <span>{post?.author || 'Equipe Neves & Costa'}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Calendar size={20} />
-                <span>{formatDate(new Date(post.date))}</span>
+                <span>{post ? formatDate(new Date(post.published_at || post.created_at)) : ''}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Clock size={20} />
-                <span>{post.readTime} de leitura</span>
+                <span>{post?.read_time || '5 min'} de leitura</span>
               </div>
             </div>
           </div>
@@ -121,21 +274,21 @@ export default function BlogPostPage() {
           <div className="max-w-4xl mx-auto">
             {/* Featured Image */}
             <div className="mb-8 rounded-lg overflow-hidden shadow-lg">
-              <img
-                src={post.image}
-                alt={post.title}
-                className="w-full h-96 object-cover"
-              />
+              {post && (
+                <img
+                  src={post.cover_url || 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1200'}
+                  alt={post.title}
+                  className="w-full h-96 object-cover"
+                />
+              )}
             </div>
 
             {/* Article Content */}
             <article className="bg-white rounded-lg shadow-md p-8 md:p-12 mb-12">
               <div
                 className="prose prose-lg max-w-none"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-                style={{
-                  lineHeight: '1.8',
-                }}
+                dangerouslySetInnerHTML={{ __html: post?.content_html || '' }}
+                style={{ lineHeight: '1.8' }}
               />
             </article>
 
