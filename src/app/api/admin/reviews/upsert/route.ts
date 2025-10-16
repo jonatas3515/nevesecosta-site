@@ -15,8 +15,15 @@ export async function POST(req: NextRequest) {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     if (!url || !key) return new Response(JSON.stringify({ error: 'supabase not configured' }), { status: 500 })
     const supabase = createClient(url, key)
-    const payload = { id, name, rating, comment, comment_date }
-    const { data, error } = await supabase.from('reviews').upsert(payload, { onConflict: 'id' }).select('*').single()
+    let data, error
+    if (id) {
+      const payload = { id, name, rating, comment, comment_date }
+      const res = await supabase.from('reviews').upsert(payload, { onConflict: 'id' }).select('*').single()
+      data = res.data as any; error = res.error as any
+    } else {
+      const res = await supabase.from('reviews').insert({ name, rating, comment, comment_date }).select('*').single()
+      data = res.data as any; error = res.error as any
+    }
     if (error) throw error
     return new Response(JSON.stringify({ item: data }), { status: 200, headers: { 'content-type': 'application/json' } })
   } catch (e: any) {

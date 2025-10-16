@@ -36,12 +36,12 @@ export default function AdminUsuariosPage() {
   const [newPassword, setNewPassword] = useState('')
   const { showToast } = useToast()
 
-  const [createForm, setCreateForm] = useState<{ email: string; password: string; role: string; perms: Perms; username?: string; phone?: string; cpf?: string }>({ 
-    email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '' 
+  const [createForm, setCreateForm] = useState<{ email: string; password: string; role: string; perms: Perms; username?: string; phone?: string; cpf?: string; full_name?: string }>({ 
+    email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '', full_name: '' 
   })
   
-  const [editForm, setEditForm] = useState<{ user_id: string; email?: string; role?: string; perms: Perms | null; username?: string; phone?: string; cpf?: string }>({ 
-    user_id: '', email: '', role: undefined, perms: null, username: '', phone: '', cpf: '' 
+  const [editForm, setEditForm] = useState<{ user_id: string; email?: string; role?: string; perms: Perms | null; username?: string; phone?: string; cpf?: string; full_name?: string }>({ 
+    user_id: '', email: '', role: undefined, perms: null, username: '', phone: '', cpf: '', full_name: '' 
   })
 
   const checkSuperAdmin = async () => {
@@ -85,12 +85,13 @@ export default function AdminUsuariosPage() {
           permissions: createForm.perms, 
           username: createForm.username, 
           phone: createForm.phone, 
-          cpf: createForm.cpf 
+          cpf: createForm.cpf, 
+          full_name: createForm.full_name 
         }) 
       })
       const j = await r.json()
       if (!r.ok) { showToast(j.error || 'Falha ao criar usuário', 'error'); return }
-      setCreateForm({ email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '' })
+      setCreateForm({ email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '', full_name: '' })
       setShowCreateForm(false)
       await load()
       showToast('Usuário criado com sucesso', 'success')
@@ -114,7 +115,7 @@ export default function AdminUsuariosPage() {
       const j = await r.json()
       if (!r.ok) { showToast(j.error || 'Falha ao atualizar usuário', 'error'); return }
       setEditingUserId(null)
-      setEditForm({ user_id: '', email: '', role: undefined, perms: null, username: '', phone: '', cpf: '' })
+      setEditForm({ user_id: '', email: '', role: undefined, perms: null, username: '', phone: '', cpf: '', full_name: '' })
       await load()
       showToast('Usuário atualizado com sucesso', 'success')
     } catch (e: any) {

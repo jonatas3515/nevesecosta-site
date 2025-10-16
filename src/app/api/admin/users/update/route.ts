@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { user_id, email, password, role, permissions, username, phone, cpf } = body || {}
+    const { user_id, email, password, role, permissions, username, phone, cpf, full_name } = body || {}
     if (!user_id) return new Response(JSON.stringify({ error: 'user_id required' }), { status: 400 })
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     if (username) profileUpdate.username = username
     if (phone) profileUpdate.phone = phone
     if (cpf) profileUpdate.cpf = cpf
+    if (full_name) profileUpdate.full_name = full_name
     if (Object.keys(profileUpdate).length > 1) {
       await supabase.from('profiles').upsert(profileUpdate, { onConflict: 'id' })
     }

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { email, password, role = 'editor', permissions, username, phone, cpf } = body || {}
+    const { email, password, role = 'editor', permissions, username, phone, cpf, full_name } = body || {}
     if (!email || !password) return new Response(JSON.stringify({ error: 'email and password required' }), { status: 400 })
     if (String(password).length < 7) return new Response(JSON.stringify({ error: 'password must be at least 7 chars' }), { status: 400 })
 
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     if (!user) throw new Error('user not created')
 
     // Upsert profile role
-    await supabase.from('profiles').upsert({ id: user.id, role, email, username, phone, cpf }, { onConflict: 'id' })
+    await supabase.from('profiles').upsert({ id: user.id, role, email, username, phone, cpf, full_name }, { onConflict: 'id' })
 
     // Upsert permissions
     if (permissions) {

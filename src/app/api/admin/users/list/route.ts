@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const permsMap = new Map((perms || []).map((p: any) => [p.user_id, p]))
 
     // Load profiles with all fields
-    const { data: profiles } = await supabase.from('profiles').select('id, role, username, phone, cpf, email')
+    const { data: profiles } = await supabase.from('profiles').select('id, role, username, phone, cpf, email, full_name')
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]))
 
     const items = (usersData?.users || []).map((u: any) => {
@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
         phone: profile?.phone || null,
         cpf: profile?.cpf || null,
         permissions: permsMap.get(u.id) || null,
+        full_name: profile?.full_name || null,
       }
     })
 

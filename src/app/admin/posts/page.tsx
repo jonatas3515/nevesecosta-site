@@ -46,18 +46,18 @@ export default function AdminPostsList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-gray-100">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Posts</h2>
-        <Link href="/admin/posts/novo" className="px-4 py-2 bg-primary-600 text-white rounded-md">Novo Post</Link>
+        <h2 className="text-2xl font-bold text-gold-500">Posts</h2>
+        <Link href="/admin/posts/novo" className="px-4 py-2 bg-gold-500 text-gray-900 rounded-md hover:bg-gold-600">Novo Post</Link>
       </div>
 
-      {loading && <div>Carregando...</div>}
+      {loading && <div className="text-gray-300">Carregando...</div>}
 
-      <div className="border rounded-md overflow-auto">
+      <div className="border border-gold-500/20 rounded-md overflow-auto bg-gray-700">
         <table className="w-full text-left min-w-[720px]">
           <thead>
-            <tr className="bg-gray-50">
+            <tr className="bg-gray-800 text-gray-100">
               <th className="p-3">Título</th>
               <th className="p-3">Slug</th>
               <th className="p-3">Status</th>
@@ -65,27 +65,27 @@ export default function AdminPostsList() {
               <th className="p-3 w-80">Ações</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="text-gray-200">
             {rows.map((r) => (
-              <tr key={r.id} className="border-t">
+              <tr key={r.id} className="border-t border-gray-600">
                 <td className="p-3">{r.title}</td>
                 <td className="p-3">{r.slug}</td>
-                <td className="p-3">{r.status}</td>
-                <td className="p-3">{r.published_at ? new Date(r.published_at).toLocaleString() : '—'}</td>
+                <td className="p-3 capitalize">{r.status}</td>
+                <td className="p-3">{r.published_at ? new Date(r.published_at).toLocaleString('pt-BR') : '—'}</td>
                 <td className="p-3 flex gap-2">
-                  <Link href={`/admin/posts/${r.id}`} className="px-3 py-1 rounded-md border">Editar</Link>
+                  <Link href={`/admin/posts/${r.id}`} className="px-3 py-1 rounded-md border border-gray-500 text-gray-200 hover:bg-gray-600">Editar</Link>
                   {r.status === 'draft' ? (
-                    <button onClick={() => publish(r.id)} className="px-3 py-1 rounded-md bg-green-600 text-white">Publicar</button>
+                    <button onClick={() => publish(r.id)} className="px-3 py-1 rounded-md bg-green-600 text-white hover:bg-green-700">Publicar</button>
                   ) : (
-                    <button onClick={() => unpublish(r.id)} className="px-3 py-1 rounded-md bg-yellow-600 text-white">Despublicar</button>
+                    <button onClick={() => unpublish(r.id)} className="px-3 py-1 rounded-md bg-yellow-600 text-white hover:bg-yellow-700">Despublicar</button>
                   )}
-                  <button onClick={() => remove(r.id)} className="px-3 py-1 rounded-md bg-red-600 text-white">Excluir</button>
+                  <button onClick={() => remove(r.id)} className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700">Excluir</button>
                 </td>
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-gray-500">Sem posts</td>
+                <td colSpan={5} className="p-4 text-center text-gray-400">Sem posts</td>
               </tr>
             )}
           </tbody>
