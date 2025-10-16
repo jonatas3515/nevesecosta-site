@@ -13,6 +13,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [ready, setReady] = useState(false)
   const [authed, setAuthed] = useState(false)
   const [isStaff, setIsStaff] = useState<boolean | null>(null)
+  const [userEmail, setUserEmail] = useState('')
+  const [userRole, setUserRole] = useState('')
 
   useEffect(() => {
     if (isLogin) { setReady(true); return }
@@ -21,6 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const session = data.session
       setAuthed(!!session)
       if (session?.user?.id) {
+        setUserEmail(session.user.email || '')
         try {
           const { data: prof, error } = await supabase
             .from('profiles')
@@ -28,7 +31,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             .eq('id', session.user.id)
             .single()
           if (error) setIsStaff(true)
-          else setIsStaff(prof ? ['admin', 'editor'].includes((prof as any).role) : false)
+          else {
+            setIsStaff(prof ? ['admin', 'editor'].includes((prof as any).role) : false)
+            setUserRole((prof as any)?.role || '')
+          }
         } catch {
           setIsStaff(true)
         }
@@ -83,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="min-h-screen bg-gray-50 pt-28">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Admin • Neves & Costa</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{userEmail?.toLowerCase() === 'jonatascosta.adv@gmail.com' ? 'Administrador Geral' : 'Editor'} • Neves & Costa</h1>
             {authed && (
               <button
                 onClick={async () => { await supabase.auth.signOut(); window.location.href = '/admin/login' }}

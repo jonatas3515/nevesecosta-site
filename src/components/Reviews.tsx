@@ -141,6 +141,7 @@ const initialReviews: Review[] = [...googleReviews]
 
 export default function Reviews() {
   const [reviews, setReviews] = useState<Review[]>(initialReviews)
+  const [allReviews, setAllReviews] = useState<Review[]>(initialReviews)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
@@ -150,14 +151,40 @@ export default function Reviews() {
     comment: '',
   })
 
+  // Load reviews from Supabase
+  useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        const { createClient } = await import('@supabase/supabase-js')
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+        )
+        const { data } = await supabase.from('reviews').select('*').order('comment_date', { ascending: false })
+        if (data && data.length > 0) {
+          const dbReviews = data.map((r: any, idx: number) => ({
+            id: 1000 + idx,
+            name: r.name,
+            role: 'Cliente',
+            rating: r.rating,
+            comment: r.comment,
+            date: r.comment_date,
+          }))
+          setAllReviews([...dbReviews, ...googleReviews])
+        }
+      } catch {}
+    }
+    loadReviews()
+  }, [])
+
   // Auto-play do carrossel a cada 5 segundos
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % googleReviews.length)
+      setCurrentIndex((prev) => (prev + 1) % allReviews.length)
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [allReviews])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -174,14 +201,14 @@ export default function Reviews() {
   }
 
   const nextReview = () => {
-    setCurrentIndex((prev) => (prev + 1) % googleReviews.length)
+    setCurrentIndex((prev) => (prev + 1) % allReviews.length)
   }
 
   const prevReview = () => {
-    setCurrentIndex((prev) => (prev - 1 + googleReviews.length) % googleReviews.length)
+    setCurrentIndex((prev) => (prev - 1 + allReviews.length) % allReviews.length)
   }
 
-  const averageRating = googleReviews.reduce((acc, review) => acc + review.rating, 0) / googleReviews.length
+  const averageRating = allReviews.reduce((acc, review) => acc + review.rating, 0) / allReviews.length
 
   return (
     <section id="avaliacoes" className="py-20 bg-black">
@@ -210,7 +237,7 @@ export default function Reviews() {
                 ))}
               </div>
               <span className="text-2xl font-bold text-white">{averageRating.toFixed(1)}</span>
-              <span className="text-gray-300">({googleReviews.length} avaliações)</span>
+              <span className="text-gray-300">({allReviews.length} avaliações)</span>
             </div>
           </div>
 
@@ -234,7 +261,7 @@ export default function Reviews() {
                     className="flex transition-transform duration-500 ease-in-out"
                     style={{ transform: `translateX(-${currentIndex * 100}%)` }}
                   >
-                    {googleReviews.map((review) => (
+                    {allReviews.map((review) => (
                       <div key={review.id} className="w-full flex-shrink-0 px-4">
                         <div className="bg-gray-800 p-6 rounded-lg border border-gold-500/10 max-w-2xl mx-auto">
                           <div className="flex justify-center mb-4">
@@ -283,7 +310,7 @@ export default function Reviews() {
                 
                 {/* Indicadores */}
                 <div className="flex justify-center mt-6 space-x-2">
-                  {googleReviews.map((_, index) => (
+                  {allReviews.map((_, index) => (
                     <button
                       key={index}
                       onClick={() => setCurrentIndex(index)}

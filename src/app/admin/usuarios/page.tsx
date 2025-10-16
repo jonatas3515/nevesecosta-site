@@ -24,11 +24,27 @@ export default function AdminUsuariosPage() {
   const [items, setItems] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [checkingAccess, setCheckingAccess] = useState(true)
 
   const [createForm, setCreateForm] = useState<{ email: string; password: string; role: string; perms: Perms; username?: string; phone?: string; cpf?: string }>({ email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '' })
   const [editForm, setEditForm] = useState<{ user_id: string; email?: string; password?: string; role?: string; perms: Perms | null; username?: string; phone?: string; cpf?: string }>({ user_id: '', email: '', password: '', role: undefined, perms: null, username: '', phone: '', cpf: '' })
   const [showPwdCreate, setShowPwdCreate] = useState(false)
   const [showPwdEdit, setShowPwdEdit] = useState(false)
+
+  const checkSuperAdmin = async () => {
+    try {
+      const { data } = await (await import('@/lib/supabaseClient')).supabase.auth.getSession()
+      const email = data.session?.user?.email
+      const isSuper = email?.toLowerCase() === 'jonatascosta.adv@gmail.com'
+      setIsSuperAdmin(isSuper)
+      if (!isSuper) {
+        alert('Acesso negado. Apenas o administrador geral pode gerenciar usuários.')
+        window.location.href = '/admin'
+      }
+    } catch {}
+    finally { setCheckingAccess(false) }
+  }
 
   const load = async () => {
     setLoading(true)
@@ -38,7 +54,7 @@ export default function AdminUsuariosPage() {
       setItems(j.items || [])
     } catch (e) {} finally { setLoading(false) }
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => { checkSuperAdmin(); load() }, [])
 
   const createUser = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,9 +95,13 @@ export default function AdminUsuariosPage() {
     } finally { setSaving(false) }
   }
 
+  if (checkingAccess) return <div>Verificando permissões...</div>
+  if (!isSuperAdmin) return null
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Usuários</h2>
+      <p className="text-sm text-gray-600 mb-4">Apenas o administrador geral (jonatascosta.adv@gmail.com) pode gerenciar usuários e permissões.</p>
 
       {/* Criar */}
       <form onSubmit={createUser} className="bg-white rounded-xl border p-4 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -198,6 +218,7 @@ export default function AdminUsuariosPage() {
               <div className="text-xs text-gray-500">Criado em {new Date(u.created_at).toLocaleString('pt-BR')}</div>
               <div className="text-xs">Role: {u.role || '-'}</div>
               <div className="text-xs text-gray-600">Permissões: {u.permissions ? Object.entries(u.permissions).filter(([k]) => k !== 'user_id').map(([k,v]) => v ? k : null).filter(Boolean).join(', ') : '(nenhuma)'}</div>
+              <div className="text-xs text-gray-500">Senha: ********** (criptografada)</div>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => setEditForm({ user_id: u.id, email: u.email, password: '', role: u.role || undefined, perms: u.permissions ? { is_admin: !!u.permissions.is_admin, can_posts: !!u.permissions.can_posts, can_reviews: !!u.permissions.can_reviews, can_orders: !!u.permissions.can_orders, can_products: !!u.permissions.can_products } : { ...emptyPerms }, username: '', phone: '', cpf: '' })} className="px-3 py-1 text-sm border rounded">Editar</button>

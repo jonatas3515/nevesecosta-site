@@ -26,6 +26,15 @@ export default function AdminAvaliacoesPage() {
   }
   useEffect(() => { load() }, [])
 
+  const remove = async (id?: string) => {
+    if (!id) return
+    if (!confirm('Excluir esta avaliação?')) return
+    const r = await fetch('/api/admin/reviews/delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id }) })
+    const j = await r.json()
+    if (!r.ok) { alert(j.error || 'Falha ao excluir'); return }
+    await load()
+  }
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
@@ -85,8 +94,9 @@ export default function AdminAvaliacoesPage() {
             </div>
             <div className="text-xs text-gray-500">{new Date(it.comment_date).toLocaleDateString('pt-BR')}</div>
             <div className="text-sm mt-2 whitespace-pre-line">{it.comment}</div>
-            <div className="mt-2">
+            <div className="mt-2 flex gap-2">
               <button className="px-3 py-1 text-sm border rounded" onClick={() => edit(it)}>Editar</button>
+              <button className="px-3 py-1 text-sm border rounded text-red-600" onClick={() => remove(it.id)}>Excluir</button>
             </div>
           </div>
         ))}

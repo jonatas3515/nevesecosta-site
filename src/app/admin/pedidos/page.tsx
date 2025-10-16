@@ -135,15 +135,16 @@ export default function PedidosPage() {
   }
 
   const deletePDF = async (order: Order) => {
-    if (!confirm('Excluir PDF deste pedido?')) return
+    if (!confirm('Excluir este pedido permanentemente?')) return
     try {
       setBusyId(order.id)
       const res = await fetch('/api/admin/orders/delete-pdf', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: order.id }) })
       const j = await res.json()
       if (!res.ok) throw new Error(String(j?.error || j))
-      alert('PDF excluído')
+      alert('Pedido excluído com sucesso')
+      await loadOrders() // Reload list
     } catch (e: any) {
-      alert('Falha ao excluir PDF: ' + (e?.message || e))
+      alert('Falha ao excluir pedido: ' + (e?.message || e))
     } finally {
       setBusyId('')
     }

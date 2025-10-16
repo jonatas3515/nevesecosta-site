@@ -1,4 +1,6 @@
 -- Reviews table for public testimonials
+create extension if not exists pgcrypto;
+
 create table if not exists public.reviews (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -9,5 +11,13 @@ create table if not exists public.reviews (
 );
 
 alter table public.reviews enable row level security;
-create policy reviews_read for select on public.reviews to anon using (true);
--- Writes will be done via service role from server routes
+-- Allow read for anyone (including anon)
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'reviews' and policyname = 'reviews_read'
+  ) then
+    create policy reviews_read on public.reviews for select using (true);
+  end if;
+end$$;
+-- Writes will be performed via service role from server routes

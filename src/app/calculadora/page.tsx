@@ -24,6 +24,8 @@ export default function CalculadoraRescisoria() {
   const [canDownload, setCanDownload] = useState(false)
   const [verifying, setVerifying] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [productPrice, setProductPrice] = useState(7500)
+  const [productPromoPrice, setProductPromoPrice] = useState<number | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -89,8 +91,19 @@ export default function CalculadoraRescisoria() {
       }
     }
 
+    const loadProductPrice = async () => {
+      try {
+        const { data } = await supabase.from('products').select('price_cents, promo_price_cents').eq('name', 'Cálculo em PDF').eq('active', true).maybeSingle()
+        if (mounted && data) {
+          setProductPrice(data.price_cents || 7500)
+          setProductPromoPrice(data.promo_price_cents)
+        }
+      } catch {}
+    }
+
     checkAdmin()
     checkPayment()
+    loadProductPrice()
     
     return () => {
       mounted = false
@@ -784,6 +797,8 @@ export default function CalculadoraRescisoria() {
         verifying={verifying}
         paymentMethod={paymentMethod}
         setPaymentMethod={setPaymentMethod}
+        productPrice={productPrice}
+        productPromoPrice={productPromoPrice}
       />
     </div>
   )
@@ -791,13 +806,15 @@ export default function CalculadoraRescisoria() {
 
 // Modal de Pagamento
 // Inserido no final para manter o arquivo com um único export default acima
-function PayModal({ open, onClose, onConfirm, verifying, paymentMethod, setPaymentMethod }: {
+function PayModal({ open, onClose, onConfirm, verifying, paymentMethod, setPaymentMethod, productPrice, productPromoPrice }: {
   open: boolean,
   onClose: () => void,
   onConfirm: () => void,
   verifying?: boolean,
   paymentMethod: 'card' | 'pix',
   setPaymentMethod: (method: 'card' | 'pix') => void,
+  productPrice: number,
+  productPromoPrice: number | null,
 }) {
   if (!open) return null
   return (
@@ -805,7 +822,12 @@ function PayModal({ open, onClose, onConfirm, verifying, paymentMethod, setPayme
       <div className="bg-white w-full max-w-md rounded-xl p-6 text-gray-900">
         <h3 className="text-xl font-bold mb-2">Baixar PDF do Cálculo</h3>
         <p className="text-sm text-gray-600 mb-4">
-          Para baixar o PDF do seu cálculo de rescisão, é necessário um pagamento simbólico de <strong>R$ 75,00</strong>.
+          Para baixar o PDF do seu cálculo de rescisão, é necessário um pagamento simbólico de{' '}
+          {productPromoPrice && productPromoPrice > 0 ? (
+            <><strong className="line-through text-gray-400">R$ {(productPrice / 100).toFixed(2).replace('.', ',')}</strong> <strong className="text-green-600">R$ {(productPromoPrice / 100).toFixed(2).replace('.', ',')}</strong></>
+          ) : (
+            <strong>R$ {(productPrice / 100).toFixed(2).replace('.', ',')}</strong>
+          )}.
           Este valor ajuda a manter o site no ar e oferecer ferramentas gratuitas para todos.
         </p>
         <p className="text-sm text-gray-600 mb-4">

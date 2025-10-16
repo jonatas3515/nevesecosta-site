@@ -22,7 +22,9 @@ export async function POST(req: NextRequest) {
       await supabase.storage.from(bucket).remove([path])
     }
 
-    await supabase.from('orders').update({ pdf_path: null, pdf_expires_at: null }).eq('id', id)
+    // Delete the entire order row
+    const { error: delErr } = await supabase.from('orders').delete().eq('id', id)
+    if (delErr) throw delErr
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } })
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message || String(e) }), { status: 500, headers: { 'content-type': 'application/json' } })

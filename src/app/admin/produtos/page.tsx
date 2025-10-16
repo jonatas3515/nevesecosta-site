@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from 'react'
+import { supabase } from '@/lib/supabaseClient'
+import { useRouter } from 'next/navigation'
 
 type Product = {
   id?: string
@@ -14,6 +16,7 @@ type Product = {
 }
 
 export default function AdminProdutosPage() {
+  const router = useRouter()
   const [items, setItems] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -22,6 +25,18 @@ export default function AdminProdutosPage() {
   const currencyBRL = (v?: number | null) => typeof v === 'number' ? (v/100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''
 
   const defaultProduct = useMemo(() => items.find(i => i.name?.toLowerCase() === 'cálculo em pdf'), [items])
+
+  const checkPerms = async () => {
+    const { data } = await supabase.auth.getSession()
+    const uid = data.session?.user?.id
+    if (!uid) { router.push('/admin/login'); return false }
+    const { data: prof } = await supabase.from('profiles').select('role').eq('id', uid).single()
+    const isAdmin = prof?.role === 'admin'
+    const { data: perms } = await supabase.from('admin_permissions').select('*').eq('user_id', uid).maybeSingle()
+    const can = isAdmin || !!perms?.can_products
+    if (!can) { router.push('/admin'); return false }
+    return true
+  }
 
   const load = async () => {
     setLoading(true)
@@ -32,7 +47,7 @@ export default function AdminProdutosPage() {
     } catch (e) {} finally { setLoading(false) }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { (async () => { if (await checkPerms()) await load() })() }, [])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
