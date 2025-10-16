@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { useToast as useToastCore } from './toast'
 
 type ToastType = 'success' | 'error' | 'info' | 'warning'
 
@@ -58,7 +59,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 export function useToast() {
-  const context = useContext(ToastContext)
-  if (!context) throw new Error('useToast must be used within ToastProvider')
-  return context
+  // Delegate to core toast provider to ensure single source of truth
+  return useToastCore() as any
 }

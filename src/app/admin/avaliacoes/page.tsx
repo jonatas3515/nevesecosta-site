@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { useToast } from '@/components/ui/toast-context'
+import { useToast } from '@/components/ui/toast'
 
 type Review = {
   id?: string
@@ -16,7 +16,7 @@ export default function AdminAvaliacoesPage() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<Review>({ name: '', rating: 5, comment: '', comment_date: new Date().toISOString().slice(0,10) })
-  const { showToast } = useToast()
+  const { show } = useToast()
 
   const load = async () => {
     setLoading(true)
@@ -34,11 +34,11 @@ export default function AdminAvaliacoesPage() {
     try {
       const r = await fetch('/api/admin/reviews/delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id }) })
       const j = await r.json()
-      if (!r.ok) { showToast(j.error || 'Falha ao excluir', 'error'); return }
-      showToast('Avaliação excluída com sucesso', 'success')
+      if (!r.ok) { show({ title: 'Falha ao excluir', description: j.error || undefined, variant: 'error' }); return }
+      show({ title: 'Avaliação excluída com sucesso', variant: 'success' })
       await load()
     } catch (e: any) {
-      showToast('Erro ao excluir: ' + (e?.message || e), 'error')
+      show({ title: 'Erro ao excluir', description: String(e?.message || e), variant: 'error' })
     }
   }
 
@@ -48,12 +48,12 @@ export default function AdminAvaliacoesPage() {
     try {
       const r = await fetch('/api/admin/reviews/upsert', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(form) })
       const j = await r.json()
-      if (!r.ok) { showToast(j.error || 'Falha ao salvar avaliação', 'error'); return }
+      if (!r.ok) { show({ title: 'Falha ao salvar avaliação', description: j.error || undefined, variant: 'error' }); return }
       setForm({ name: '', rating: 5, comment: '', comment_date: new Date().toISOString().slice(0,10) })
       await load()
-      showToast('Avaliação salva com sucesso', 'success')
+      show({ title: 'Avaliação salva com sucesso', variant: 'success' })
     } catch (e: any) {
-      showToast('Erro: ' + (e?.message || e), 'error')
+      show({ title: 'Erro ao salvar', description: String(e?.message || e), variant: 'error' })
     } finally { setSaving(false) }
   }
 

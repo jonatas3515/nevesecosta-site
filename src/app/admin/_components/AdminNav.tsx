@@ -10,6 +10,7 @@ const baseLinks = [
   { href: "/admin/pedidos", label: "Pedidos", key: "can_orders" },
   { href: "/admin/posts", label: "Posts", key: "can_posts" },
   { href: "/admin/categorias", label: "Categorias", key: "can_posts" },
+  { href: "/admin/comentarios", label: "Comentários", key: "can_posts" },
   { href: "/admin/produtos", label: "Produtos", key: "can_products" },
   { href: "/admin/avaliacoes", label: "Avaliações", key: "can_reviews" },
   { href: "/admin/usuarios", label: "Usuários", key: "is_admin" },

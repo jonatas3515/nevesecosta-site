@@ -62,47 +62,47 @@ export default function AdminCategorias() {
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Categorias</h2>
+    <div className="space-y-6 text-gray-100">
+      <h2 className="text-2xl font-bold text-gold-500">Categorias</h2>
 
-      <form onSubmit={handleSubmit(createCategory)} className="grid md:grid-cols-3 gap-3 items-end">
+      <form onSubmit={handleSubmit(createCategory)} className="grid md:grid-cols-3 gap-3 items-end bg-gray-700 border border-gold-500/30 rounded-xl p-4">
         <div>
-          <label className="text-sm block mb-1">Nome</label>
-          <input className="w-full border rounded-md px-3 py-2" {...register('name')} />
-          {errors.name && <div className="text-sm text-red-600 mt-1">{errors.name.message}</div>}
+          <label className="text-sm block mb-1 text-gray-300">Nome</label>
+          <input className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" {...register('name')} />
+          {errors.name && <div className="text-sm text-red-400 mt-1">{errors.name.message}</div>}
         </div>
         <div>
-          <label className="text-sm block mb-1">Slug</label>
-          <input className="w-full border rounded-md px-3 py-2" {...register('slug')} />
-          {errors.slug && <div className="text-sm text-red-600 mt-1">{errors.slug.message}</div>}
+          <label className="text-sm block mb-1 text-gray-300">Slug</label>
+          <input className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" {...register('slug')} />
+          {errors.slug && <div className="text-sm text-red-400 mt-1">{errors.slug.message}</div>}
         </div>
-        <button disabled={loading} className="bg-primary-600 text-white px-4 py-2 rounded-md">
+        <button disabled={loading} className={`px-4 py-2 rounded-md ${loading ? 'bg-gray-600 text-white' : 'bg-gold-500 hover:bg-gold-600 text-gray-900'}`}>
           {loading ? 'Salvando...' : 'Adicionar'}
         </button>
       </form>
 
-      <div className="border rounded-md">
+      <div className="border border-gold-500/30 rounded-md overflow-hidden">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-gray-50">
+            <tr className="bg-gray-800 text-gray-100">
               <th className="p-3">Nome</th>
               <th className="p-3">Slug</th>
               <th className="p-3 w-32">Ações</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="text-gray-200">
             {categories.map((c) => (
-              <tr key={c.id} className="border-t">
+              <tr key={c.id} className="border-t border-gray-700">
                 <td className="p-3">{c.name}</td>
                 <td className="p-3">{c.slug}</td>
                 <td className="p-3">
-                  <button onClick={() => removeCategory(c.id)} className="text-red-600 hover:underline">Excluir</button>
+                  <button onClick={() => removeCategory(c.id)} className="px-3 py-1 text-sm border border-red-600 rounded text-red-400 hover:bg-red-600 hover:text-white">Excluir</button>
                 </td>
               </tr>
             ))}
             {categories.length === 0 && (
               <tr>
-                <td colSpan={3} className="p-4 text-center text-gray-500">Sem categorias</td>
+                <td colSpan={3} className="p-4 text-center text-gray-400">Sem categorias</td>
               </tr>
             )}
           </tbody>

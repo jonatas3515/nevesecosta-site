@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { ToastProvider } from '@/components/ui/toast-context'
+import { ToastProvider } from '@/components/ui/toast'
 import { AdminNav } from './_components/AdminNav'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

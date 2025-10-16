@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useToast } from '@/components/ui/toast-context'
+import { useToast } from '@/components/ui/toast'
 
 type Perms = {
   is_admin: boolean
@@ -19,6 +19,7 @@ type UserRow = {
   username: string | null
   phone: string | null
   cpf: string | null
+  full_name?: string | null
   permissions: (Perms & { user_id: string }) | null
 }
 
@@ -34,7 +35,7 @@ export default function AdminUsuariosPage() {
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
   const [changingPasswordUserId, setChangingPasswordUserId] = useState<string | null>(null)
   const [newPassword, setNewPassword] = useState('')
-  const { showToast } = useToast()
+  const { show } = useToast()
 
   const [createForm, setCreateForm] = useState<{ email: string; password: string; role: string; perms: Perms; username?: string; phone?: string; cpf?: string; full_name?: string }>({ 
     email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '', full_name: '' 
@@ -51,7 +52,7 @@ export default function AdminUsuariosPage() {
       const isSuper = email?.toLowerCase() === 'jonatascosta.adv@gmail.com'
       setIsSuperAdmin(isSuper)
       if (!isSuper) {
-        showToast('Acesso negado. Apenas o administrador geral pode gerenciar usuários.', 'error')
+        show({ title: 'Acesso negado', description: 'Apenas o administrador geral pode gerenciar usuários.', variant: 'error' })
         window.location.href = '/admin'
       }
     } catch {}
@@ -90,13 +91,13 @@ export default function AdminUsuariosPage() {
         }) 
       })
       const j = await r.json()
-      if (!r.ok) { showToast(j.error || 'Falha ao criar usuário', 'error'); return }
+      if (!r.ok) { show({ title: 'Falha ao criar usuário', description: j.error || undefined, variant: 'error' }); return }
       setCreateForm({ email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '', full_name: '' })
       setShowCreateForm(false)
       await load()
-      showToast('Usuário criado com sucesso', 'success')
+      show({ title: 'Usuário criado com sucesso', variant: 'success' })
     } catch (e: any) {
-      showToast('Erro: ' + (e?.message || e), 'error')
+      show({ title: 'Erro ao criar', description: String(e?.message || e), variant: 'error' })
     } finally { setSaving(false) }
   }
 
@@ -113,19 +114,19 @@ export default function AdminUsuariosPage() {
       
       const r = await fetch('/api/admin/users/update', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
       const j = await r.json()
-      if (!r.ok) { showToast(j.error || 'Falha ao atualizar usuário', 'error'); return }
+      if (!r.ok) { show({ title: 'Falha ao atualizar usuário', description: j.error || undefined, variant: 'error' }); return }
       setEditingUserId(null)
       setEditForm({ user_id: '', email: '', role: undefined, perms: null, username: '', phone: '', cpf: '', full_name: '' })
       await load()
-      showToast('Usuário atualizado com sucesso', 'success')
+      show({ title: 'Usuário atualizado com sucesso', variant: 'success' })
     } catch (e: any) {
-      showToast('Erro: ' + (e?.message || e), 'error')
+      show({ title: 'Erro ao atualizar', description: String(e?.message || e), variant: 'error' })
     } finally { setSaving(false) }
   }
 
   const changePassword = async (userId: string) => {
     if (!newPassword || newPassword.length < 7) {
-      showToast('Senha deve ter no mínimo 7 caracteres', 'warning')
+      show({ title: 'Senha muito curta', description: 'Mínimo de 7 caracteres.', variant: 'error' })
       return
     }
     setSaving(true)
@@ -136,12 +137,12 @@ export default function AdminUsuariosPage() {
         body: JSON.stringify({ user_id: userId, password: newPassword }) 
       })
       const j = await r.json()
-      if (!r.ok) { showToast(j.error || 'Falha ao alterar senha', 'error'); return }
+      if (!r.ok) { show({ title: 'Falha ao alterar senha', description: j.error || undefined, variant: 'error' }); return }
       setChangingPasswordUserId(null)
       setNewPassword('')
-      showToast('Senha alterada com sucesso', 'success')
+      show({ title: 'Senha alterada com sucesso', variant: 'success' })
     } catch (e: any) {
-      showToast('Erro: ' + (e?.message || e), 'error')
+      show({ title: 'Erro ao alterar senha', description: String(e?.message || e), variant: 'error' })
     } finally { setSaving(false) }
   }
 
@@ -154,11 +155,11 @@ export default function AdminUsuariosPage() {
         body: JSON.stringify({ user_id: userId }) 
       })
       const j = await r.json()
-      if (!r.ok) { showToast(j.error || 'Falha ao remover usuário', 'error'); return }
+      if (!r.ok) { show({ title: 'Falha ao remover usuário', description: j.error || undefined, variant: 'error' }); return }
       await load()
-      showToast('Usuário removido com sucesso', 'success')
+      show({ title: 'Usuário removido com sucesso', variant: 'success' })
     } catch (e: any) {
-      showToast('Erro: ' + (e?.message || e), 'error')
+      show({ title: 'Erro ao remover', description: String(e?.message || e), variant: 'error' })
     }
   }
 
@@ -188,6 +189,11 @@ export default function AdminUsuariosPage() {
                 className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" required />
             </div>
             <div>
+              <label className="block text-sm font-medium mb-1 text-gray-300">Nome Completo</label>
+              <input value={createForm.full_name || ''} onChange={e => setCreateForm(f => ({ ...f, full_name: e.target.value }))} 
+                className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" />
+            </div>
+            <div>
               <label className="block text-sm font-medium mb-1 text-gray-300">Usuário (login)</label>
               <input value={createForm.username || ''} onChange={e => setCreateForm(f => ({ ...f, username: e.target.value }))} 
                 className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" />
@@ -196,6 +202,16 @@ export default function AdminUsuariosPage() {
               <label className="block text-sm font-medium mb-1 text-gray-300">Senha * (mín. 7 caracteres)</label>
               <input type="password" value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} 
                 className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" required minLength={7} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-300">WhatsApp</label>
+              <input value={createForm.phone || ''} onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))} 
+                className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-300">CPF</label>
+              <input value={createForm.cpf || ''} onChange={e => setCreateForm(f => ({ ...f, cpf: e.target.value }))} 
+                className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 text-gray-300">Função</label>
@@ -247,8 +263,23 @@ export default function AdminUsuariosPage() {
                       className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded px-2 py-1 text-sm" />
                   </div>
                   <div>
+                    <label className="block text-xs text-gray-400 mb-1">Nome Completo</label>
+                    <input value={editForm.full_name || ''} onChange={e => setEditForm(f => ({ ...f, full_name: e.target.value }))} 
+                      className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded px-2 py-1 text-sm" />
+                  </div>
+                  <div>
                     <label className="block text-xs text-gray-400 mb-1">Usuário</label>
                     <input value={editForm.username || ''} onChange={e => setEditForm(f => ({ ...f, username: e.target.value }))} 
+                      className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded px-2 py-1 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">WhatsApp</label>
+                    <input value={editForm.phone || ''} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} 
+                      className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded px-2 py-1 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">CPF</label>
+                    <input value={editForm.cpf || ''} onChange={e => setEditForm(f => ({ ...f, cpf: e.target.value }))} 
                       className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded px-2 py-1 text-sm" />
                   </div>
                   <div>
@@ -303,6 +334,9 @@ export default function AdminUsuariosPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-300">
                       <div><span className="text-gray-400">Login:</span> {u.username || u.email}</div>
                       <div><span className="text-gray-400">Senha:</span> ••••••••</div>
+                      {u.full_name && <div><span className="text-gray-400">Nome Completo:</span> {u.full_name}</div>}
+                      {u.phone && <div><span className="text-gray-400">WhatsApp:</span> {u.phone}</div>}
+                      {u.cpf && <div><span className="text-gray-400">CPF:</span> {u.cpf}</div>}
                       <div><span className="text-gray-400">Permissões:</span> {u.permissions ? Object.entries(u.permissions).filter(([k]) => k !== 'user_id' && k !== 'is_admin').map(([k,v]) => v ? k.replace('can_', '') : null).filter(Boolean).join(', ') || 'Nenhuma' : 'Nenhuma'}</div>
                     </div>
                   </div>
