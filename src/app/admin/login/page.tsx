@@ -53,9 +53,18 @@ export default function AdminLogin() {
         }
         
         console.log('[LOGIN] Resultado da busca:', { row, searchError, email: row?.email })
-        email = row?.email || ''
+        
+        // Verificar se encontrou o usuário
+        if (row && row.email) {
+          email = row.email
+        } else {
+          console.error('[LOGIN] Usuário não encontrado. Row:', row)
+        }
       }
-      if (!email) throw new Error('Login não encontrado. Verifique se o usuário existe.')
+      
+      if (!email) {
+        throw new Error('Usuário "' + login + '" não encontrado. Verifique se o login está correto.')
+      }
       if (password.length < 7) throw new Error('A senha deve ter pelo menos 7 caracteres')
       
       console.log('[LOGIN] Tentando login com email:', email)

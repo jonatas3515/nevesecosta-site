@@ -36,6 +36,8 @@ export default function AdminUsuariosPage() {
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
   const [changingPasswordUserId, setChangingPasswordUserId] = useState<string | null>(null)
   const [newPassword, setNewPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showCreatePassword, setShowCreatePassword] = useState(false)
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
   const { show } = useToast()
 
@@ -234,8 +236,23 @@ export default function AdminUsuariosPage() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 text-gray-300">Senha * (mín. 7 caracteres)</label>
-              <input type="password" value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} 
-                className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" required minLength={7} />
+              <div className="relative">
+                <input 
+                  type={showCreatePassword ? 'text' : 'password'} 
+                  value={createForm.password} 
+                  onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} 
+                  className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2 pr-10" 
+                  required 
+                  minLength={7} 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCreatePassword(!showCreatePassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                >
+                  {showCreatePassword ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 text-gray-300">WhatsApp</label>
@@ -428,14 +445,28 @@ export default function AdminUsuariosPage() {
                   <div className="mt-3 p-3 bg-gray-800 rounded border border-yellow-500/30">
                     <label className="block text-sm text-gray-300 mb-2">Nova Senha (mín. 7 caracteres)</label>
                     <div className="flex gap-2">
-                      <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} 
-                        className="flex-1 border border-gray-600 bg-gray-900 text-gray-100 rounded px-3 py-1 text-sm" 
-                        placeholder="Digite a nova senha" minLength={7} />
+                      <div className="flex-1 relative">
+                        <input 
+                          type={showPassword ? 'text' : 'password'} 
+                          value={newPassword} 
+                          onChange={e => setNewPassword(e.target.value)} 
+                          className="w-full border border-gray-600 bg-gray-900 text-gray-100 rounded px-3 py-1 pr-10 text-sm" 
+                          placeholder="Digite a nova senha" 
+                          minLength={7} 
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                        >
+                          {showPassword ? '🙈' : '👁️'}
+                        </button>
+                      </div>
                       <button onClick={() => changePassword(u.id)} disabled={saving}
                         className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:bg-gray-600">
                         Salvar
                       </button>
-                      <button onClick={() => { setChangingPasswordUserId(null); setNewPassword('') }}
+                      <button onClick={() => { setChangingPasswordUserId(null); setNewPassword(''); setShowPassword(false) }}
                         className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-500">
                         Cancelar
                       </button>
