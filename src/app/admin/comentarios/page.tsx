@@ -12,6 +12,11 @@ interface Row {
   status: 'pending' | 'approved' | 'rejected'
   created_at: string
   is_staff_reply?: boolean
+  staff_reply?: {
+    id: string
+    content: string
+    created_at: string
+  } | null
 }
 
 export default function AdminComentarios() {
@@ -26,9 +31,30 @@ export default function AdminComentarios() {
     setLoading(true)
     const { data } = await supabase
       .from('comments')
-      .select('id, post_id, author_name, content, status, created_at, is_staff_reply')
+      .select('id, post_id, parent_id, author_name, content, status, created_at, is_staff_reply')
       .order('created_at', { ascending: false })
-    setRows(data as Row[] || [])
+    
+    // Filtrar apenas comentários principais (sem parent_id)
+    const mainComments = (data || []).filter((c: any) => !c.parent_id)
+    
+    // Para cada comentário principal, buscar sua resposta
+    const commentsWithReplies = await Promise.all(
+      mainComments.map(async (comment: any) => {
+        const { data: replies } = await supabase
+          .from('comments')
+          .select('*')
+          .eq('parent_id', comment.id)
+          .eq('is_staff_reply', true)
+          .maybeSingle()
+        
+        return {
+          ...comment,
+          staff_reply: replies
+        }
+      })
+    )
+    
+    setRows(commentsWithReplies as any)
     setLoading(false)
   }
 
@@ -91,6 +117,30 @@ export default function AdminComentarios() {
     }
   }
 
+  const updateReply = async (row: Row) => {
+    const content = replying[row.id]
+    if (!content || !row.staff_reply) return
+    const { error } = await supabase
+      .from('comments')
+      .update({ content })
+      .eq('id', row.staff_reply.id)
+    if (error) {
+      show({ title: 'Erro ao atualizar resposta', description: error.message, variant: 'error' })
+    } else {
+      setReplying((prev) => ({ ...prev, [row.id]: '' }))
+      setEditingId(null)
+      show({ title: 'Resposta atualizada', variant: 'success' })
+      await load()
+    }
+  }
+
+  const startEditReply = (row: Row) => {
+    if (row.staff_reply) {
+      setEditingId(row.id)
+      setReplying((prev) => ({ ...prev, [row.id]: row.staff_reply!.content }))
+    }
+  }
+
   return (
     <div className="space-y-6 text-gray-100">
       <h2 className="text-2xl font-bold text-gold-500">Comentários</h2>
@@ -107,43 +157,66 @@ export default function AdminComentarios() {
           </thead>
           <tbody className="text-gray-200">
             {rows.map((r) => {
-              const isStaff = r.is_staff_reply || (r.author_name || '').toLowerCase().includes('equipe neves')
+              const hasReply = !!r.staff_reply
+              const isEditing = editingId === r.id
+              
               return (
                 <tr key={r.id} className="border-t border-gray-700">
                   <td className="p-3">{r.author_name || 'Visitante'}</td>
                   <td className="p-3">
-                    {editingId === r.id ? (
-                      <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={3}
-                        className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-2 py-1" />
-                    ) : (
-                      r.content
-                    )}
+                    <div className="space-y-2">
+                      {/* Comentário original */}
+                      <div className="text-gray-200">{r.content}</div>
+                      
+                      {/* Resposta da equipe (se existir) */}
+                      {hasReply && !isEditing && (
+                        <div className="mt-2 pl-4 border-l-2 border-gold-500">
+                          <div className="text-xs text-gray-400 mb-1">Resposta da equipe:</div>
+                          <div className="text-gray-300">{r.staff_reply!.content}</div>
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3">{r.status}</td>
                   <td className="p-3 space-y-2">
                     <div className="flex gap-2">
                       <button onClick={() => remove(r.id)} className="px-3 py-1 rounded-md border border-red-600 text-red-400 hover:bg-red-600 hover:text-white">Excluir</button>
-                      {isStaff ? (
-                        editingId === r.id ? (
-                          <>
-                            <button onClick={() => saveEdit(r)} className="px-3 py-1 rounded-md border border-green-600 text-green-400 hover:bg-green-600 hover:text-white">Salvar</button>
-                            <button onClick={cancelEdit} className="px-3 py-1 rounded-md border border-gray-500 text-gray-300 hover:bg-gray-600">Cancelar</button>
-                          </>
-                        ) : (
-                          <button onClick={() => startEdit(r)} className="px-3 py-1 rounded-md border border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white">Editar</button>
-                        )
-                      ) : null}
                     </div>
-                    {!isStaff && (
+                    
+                    {/* Campo de resposta/edição */}
+                    {(!hasReply || isEditing) && (
                       <div className="flex gap-2">
                         <input
                           value={replying[r.id] || ''}
                           onChange={(e) => setReplying((prev) => ({ ...prev, [r.id]: e.target.value }))}
-                          placeholder="Responder como equipe..."
+                          placeholder={isEditing ? "Editar resposta..." : "Responder como equipe..."}
                           className="border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-2 py-1 flex-1"
                         />
-                        <button onClick={() => reply(r)} className="px-3 py-1 rounded-md bg-gold-500 text-gray-900 hover:bg-gold-600">Responder</button>
+                        <button 
+                          onClick={() => isEditing ? updateReply(r) : reply(r)} 
+                          className="px-3 py-1 rounded-md bg-gold-500 text-gray-900 hover:bg-gold-600"
+                        >
+                          {isEditing ? 'Salvar' : 'Responder'}
+                        </button>
+                        {isEditing && (
+                          <button 
+                            onClick={() => { setEditingId(null); setReplying((prev) => ({ ...prev, [r.id]: '' })) }} 
+                            className="px-3 py-1 rounded-md border border-gray-500 text-gray-300 hover:bg-gray-600"
+                          >
+                            Cancelar
+                          </button>
+                        )}
                       </div>
+                    )}
+                    
+                    {/* Botão Editar (quando já tem resposta) */}
+                    {hasReply && !isEditing && (
+                      <button 
+                        onClick={() => startEditReply(r)} 
+                        className="px-3 py-1 rounded-md border border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white"
+                      >
+                        Editar
+                      </button>
                     )}
                   </td>
                 </tr>

@@ -19,10 +19,32 @@ export default function AdminPostsList() {
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase
+    
+    // Verificar se é admin ou editor
+    const { data: session } = await supabase.auth.getSession()
+    const userId = session.session?.user?.id
+    
+    let query = supabase
       .from('posts')
-      .select('id, title, slug, status, created_at, published_at')
+      .select('id, title, slug, status, created_at, published_at, created_by')
       .order('created_at', { ascending: false })
+    
+    // Se não for super admin, filtrar apenas posts do próprio usuário
+    if (userId) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', userId)
+        .single()
+      
+      const isSuperAdmin = profile?.email?.toLowerCase() === 'jonatascosta.adv@gmail.com'
+      
+      if (!isSuperAdmin) {
+        query = query.eq('created_by', userId)
+      }
+    }
+    
+    const { data } = await query
     setRows((data as Row[]) || [])
     setLoading(false)
   }

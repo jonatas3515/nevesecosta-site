@@ -49,7 +49,12 @@ export default function AdminAvaliacoesPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const r = await fetch('/api/admin/reviews/list')
+      const { data } = await supabase.auth.getSession()
+      const token = data.session?.access_token
+      
+      const r = await fetch('/api/admin/reviews/list', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      })
       const j = await r.json()
       setItems(j.items || [])
     } catch (e) { /* noop */ } finally { setLoading(false) }

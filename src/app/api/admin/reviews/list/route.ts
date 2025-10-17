@@ -10,10 +10,38 @@ export async function GET(req: NextRequest) {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     if (!url || !key) return new Response(JSON.stringify({ error: 'supabase not configured' }), { status: 500 })
     const supabase = createClient(url, key)
-    const { data, error } = await supabase
+    
+    // Obter user_id do header de autorização
+    const authHeader = req.headers.get('authorization')
+    let userId: string | null = null
+    
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7)
+      const { data: { user } } = await supabase.auth.getUser(token)
+      userId = user?.id || null
+    }
+    
+    let query = supabase
       .from('reviews')
       .select('*')
       .order('comment_date', { ascending: false })
+    
+    // Se não for super admin, filtrar apenas avaliações do próprio usuário
+    if (userId) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', userId)
+        .single()
+      
+      const isSuperAdmin = profile?.email?.toLowerCase() === 'jonatascosta.adv@gmail.com'
+      
+      if (!isSuperAdmin) {
+        query = query.eq('created_by', userId)
+      }
+    }
+    
+    const { data, error } = await query
     if (error) throw error
     return new Response(JSON.stringify({ items: data || [] }), { status: 200, headers: { 'content-type': 'application/json' } })
   } catch (e: any) {
