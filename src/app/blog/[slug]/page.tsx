@@ -402,6 +402,16 @@ export default function BlogPostPage() {
               </div>
             )}
 
+            {/* Internal Links (CTA) */}
+            <div className="bg-primary-50 border border-primary-100 rounded-lg p-8 md:p-12 mb-12">
+              <h2 className="text-2xl font-bold text-primary-900 mb-4">Precisa de orientação jurídica?</h2>
+              <p className="text-primary-800 mb-6">Conheça nossas áreas de atuação ou fale diretamente com nossa equipe.</p>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/areas" className="px-5 py-3 rounded-md bg-primary-600 text-white hover:bg-primary-700">Áreas de Atuação</Link>
+                <Link href="/contato" className="px-5 py-3 rounded-md bg-gold-500 text-gray-900 hover:bg-gold-600">Fale Conosco</Link>
+              </div>
+            </div>
+
             {/* Comments Section */}
             <div className="bg-white rounded-lg shadow-md p-8 md:p-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-8 flex items-center space-x-2">
