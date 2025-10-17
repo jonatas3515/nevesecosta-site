@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
     })
     
     console.log('[LIST USERS] Returning', items.length, 'users')
+    console.log('[LIST USERS] Emails:', items.map((i: any) => i.email).join(', '))
 
     return new Response(JSON.stringify({ items }), { 
       status: 200, 

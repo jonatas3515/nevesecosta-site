@@ -73,9 +73,11 @@ export default function AdminUsuariosPage() {
       })
       const j = await r.json()
       console.log('[FRONTEND] Received', j.items?.length || 0, 'users from API')
+      console.log('[FRONTEND] Emails received:', (j.items || []).map((u: UserRow) => u.email).join(', '))
       // Filter out super admin from list
       const filtered = (j.items || []).filter((u: UserRow) => u.email?.toLowerCase() !== 'jonatascosta.adv@gmail.com')
       console.log('[FRONTEND] After filtering super admin:', filtered.length, 'users')
+      console.log('[FRONTEND] Emails after filter:', filtered.map((u: UserRow) => u.email).join(', '))
       setItems(filtered)
     } catch (e) {
       console.error('[FRONTEND] Error loading users:', e)
@@ -119,7 +121,11 @@ export default function AdminUsuariosPage() {
       setShowCreateForm(false)
       setCreateForm({ email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '', full_name: '' })
       
-      // Recarregar lista IMEDIATAMENTE
+      // Aguardar 2 segundos para o Supabase processar
+      console.log('[FRONTEND] Waiting 2s for Supabase to process...')
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Recarregar lista
       console.log('[FRONTEND] Reloading user list...')
       await load()
       
