@@ -47,11 +47,7 @@ export function AdminNav() {
       }
     }
     load()
-    
-    // Recarregar permissões a cada 5 segundos para pegar mudanças
-    const interval = setInterval(load, 5000)
-    return () => clearInterval(interval)
-  }, [reloadKey])
+  }, [pathname])
 
   return (
     <nav className="mb-6 border-b border-gold-500/30 pb-4">

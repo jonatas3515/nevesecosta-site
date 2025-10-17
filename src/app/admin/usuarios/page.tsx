@@ -80,38 +80,44 @@ export default function AdminUsuariosPage() {
     e.preventDefault()
     setSaving(true)
     try {
-      // Check if email already exists
-      const checkResponse = await fetch('/api/admin/users/check-email', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: createForm.email })
-      })
-      const checkResult = await checkResponse.json()
-      if (checkResult.exists) {
-        show({ title: 'Email já cadastrado', description: `O email ${createForm.email} já está cadastrado. Use outro email ou edite o usuário existente.`, variant: 'error' })
-        return
+      const payload = { 
+        email: createForm.email, 
+        password: createForm.password, 
+        role: createForm.role, 
+        permissions: createForm.perms, 
+        username: createForm.username, 
+        phone: createForm.phone, 
+        cpf: createForm.cpf, 
+        full_name: createForm.full_name 
       }
+      
+      console.log('[FRONTEND] Creating user with payload:', payload)
+      
       const r = await fetch('/api/admin/users/create', { 
         method: 'POST', 
         headers: { 'content-type': 'application/json' }, 
-        body: JSON.stringify({ 
-          email: createForm.email, 
-          password: createForm.password, 
-          role: createForm.role, 
-          permissions: createForm.perms, 
-          username: createForm.username, 
-          phone: createForm.phone, 
-          cpf: createForm.cpf, 
-          full_name: createForm.full_name 
-        }) 
+        body: JSON.stringify(payload) 
       })
       const j = await r.json()
-      if (!r.ok) { show({ title: 'Falha ao criar usuário', description: j.error || undefined, variant: 'error' }); return }
-      setCreateForm({ email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '', full_name: '' })
+      
+      console.log('[FRONTEND] Create response:', { ok: r.ok, status: r.status, data: j })
+      
+      if (!r.ok) { 
+        show({ title: 'Falha ao criar usuário', description: j.error || undefined, variant: 'error' })
+        return 
+      }
+      
+      // Limpar formulário
       setShowCreateForm(false)
+      setCreateForm({ email: '', password: '', role: 'editor', perms: { ...emptyPerms }, username: '', phone: '', cpf: '', full_name: '' })
+      
+      // Recarregar lista IMEDIATAMENTE
+      console.log('[FRONTEND] Reloading user list...')
       await load()
+      
       show({ title: 'Usuário criado com sucesso', variant: 'success' })
     } catch (e: any) {
+      console.error('[FRONTEND] Create error:', e)
       show({ title: 'Erro ao criar', description: String(e?.message || e), variant: 'error' })
     } finally { setSaving(false) }
   }

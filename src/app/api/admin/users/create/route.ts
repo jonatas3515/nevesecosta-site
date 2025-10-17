@@ -8,6 +8,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { email, password, role = 'editor', permissions, username, phone, cpf, full_name } = body || {}
+    
+    console.log('[CREATE USER] Received payload:', { email, role, permissions, username, phone, cpf, full_name })
+    
     if (!email || !password) return new Response(JSON.stringify({ error: 'email and password required' }), { status: 400 })
     if (String(password).length < 7) return new Response(JSON.stringify({ error: 'password must be at least 7 chars' }), { status: 400 })
 
@@ -37,10 +40,19 @@ export async function POST(req: NextRequest) {
     if (full_name && String(full_name).trim()) profilePayload.full_name = String(full_name).trim()
     await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' })
 
-    // Upsert permissions
-    if (permissions) {
-      await supabase.from('admin_permissions').upsert({ user_id: user.id, ...permissions }, { onConflict: 'user_id' })
+    // Upsert permissions - SEMPRE criar registro, mesmo que vazio
+    const permPayload = { 
+      user_id: user.id, 
+      is_admin: false,
+      can_posts: false,
+      can_categories: false,
+      can_reviews: false,
+      can_orders: false,
+      can_products: false,
+      ...permissions 
     }
+    console.log('[CREATE USER] Permissions to save:', permPayload)
+    await supabase.from('admin_permissions').upsert(permPayload, { onConflict: 'user_id' })
 
     return new Response(JSON.stringify({ id: user.id, email: user.email }), { status: 200, headers: { 'content-type': 'application/json' } })
   } catch (e: any) {
