@@ -109,6 +109,7 @@ export default function AdminUsuariosPage() {
       if (editForm.role) payload.role = editForm.role
       if (editForm.perms) payload.permissions = editForm.perms
       if (editForm.username) payload.username = editForm.username
+      if (editForm.full_name) payload.full_name = editForm.full_name
       if (editForm.phone) payload.phone = editForm.phone
       if (editForm.cpf) payload.cpf = editForm.cpf
       
@@ -314,7 +315,7 @@ export default function AdminUsuariosPage() {
                     className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:bg-gray-600">
                     Salvar
                   </button>
-                  <button onClick={() => { setEditingUserId(null); setEditForm({ user_id: '', email: '', role: undefined, perms: null, username: '', phone: '', cpf: '' }) }}
+                  <button onClick={() => { setEditingUserId(null); setEditForm({ user_id: '', email: '', role: undefined, perms: null, username: '', phone: '', cpf: '', full_name: '' }) }}
                     className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-500">
                     Cancelar
                   </button>
@@ -356,7 +357,8 @@ export default function AdminUsuariosPage() {
                         } : { ...emptyPerms }, 
                         username: u.username || '', 
                         phone: u.phone || '', 
-                        cpf: u.cpf || '' 
+                        cpf: u.cpf || '',
+                        full_name: u.full_name || ''
                       }) 
                     }}
                       className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">

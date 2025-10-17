@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     // Update permissions
     if (permissions) {
-      await supabase.from('admin_permissions').upsert({ user_id, ...permissions })
+      await supabase.from('admin_permissions').upsert({ user_id, ...permissions }, { onConflict: 'user_id' })
     }
 
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } })
