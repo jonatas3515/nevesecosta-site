@@ -22,13 +22,37 @@ export default function AdminLogin() {
       } else {
         // tentar resolver via profiles por username/cpf/phone
         console.log('[LOGIN] Buscando usuário por username/cpf/phone:', login)
-        const { data: row, error: searchError } = await supabase
+        
+        // Tentar por username primeiro
+        let { data: row, error: searchError } = await supabase
           .from('profiles')
           .select('email')
-          .or(`username.eq.${login},cpf.eq.${login},phone.eq.${login}`)
+          .eq('username', login)
           .maybeSingle()
         
-        console.log('[LOGIN] Resultado da busca:', { row, searchError })
+        // Se não encontrou, tentar por CPF
+        if (!row && !searchError) {
+          const result = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('cpf', login)
+            .maybeSingle()
+          row = result.data
+          searchError = result.error
+        }
+        
+        // Se não encontrou, tentar por phone
+        if (!row && !searchError) {
+          const result = await supabase
+            .from('profiles')
+            .select('email')
+            .eq('phone', login)
+            .maybeSingle()
+          row = result.data
+          searchError = result.error
+        }
+        
+        console.log('[LOGIN] Resultado da busca:', { row, searchError, email: row?.email })
         email = row?.email || ''
       }
       if (!email) throw new Error('Login não encontrado. Verifique se o usuário existe.')

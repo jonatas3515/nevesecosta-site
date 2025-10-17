@@ -114,12 +114,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <h1 className="text-3xl font-bold text-gold-500">{userEmail?.toLowerCase() === 'jonatascosta.adv@gmail.com' ? 'Administrador Geral' : 'Editor'} • Neves & Costa</h1>
             {authed && (
               <div className="flex gap-3">
-                <button
-                  onClick={() => setShowChangePassword(true)}
-                  className="text-sm text-gold-500 hover:text-gold-400 hover:underline"
-                >
-                  Mudar Senha
-                </button>
+                {userEmail?.toLowerCase() === 'jonatascosta.adv@gmail.com' && (
+                  <button
+                    onClick={() => setShowChangePassword(true)}
+                    className="text-sm text-gold-500 hover:text-gold-400 hover:underline"
+                  >
+                    Mudar Senha
+                  </button>
+                )}
                 <button
                   onClick={async () => { await supabase.auth.signOut(); window.location.href = '/admin/login' }}
                   className="text-sm text-red-400 hover:text-red-300 hover:underline"

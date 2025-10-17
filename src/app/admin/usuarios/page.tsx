@@ -120,7 +120,15 @@ export default function AdminUsuariosPage() {
       const payload: any = { user_id: userId }
       if (editForm.email) payload.email = editForm.email
       if (editForm.role) payload.role = editForm.role
-      if (editForm.perms) payload.permissions = editForm.perms
+      
+      // Sempre enviar permissões se existirem
+      if (editForm.perms) {
+        payload.permissions = editForm.perms
+        console.log('[FRONTEND] Permissions to send:', editForm.perms)
+      } else {
+        console.warn('[FRONTEND] No permissions in editForm!')
+      }
+      
       // Sempre enviar campos de identidade, mesmo que vazios
       payload.username = editForm.username || ''
       payload.full_name = editForm.full_name || ''
