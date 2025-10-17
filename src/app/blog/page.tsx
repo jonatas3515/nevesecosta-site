@@ -9,6 +9,12 @@ import type { Metadata } from 'next'
 import Canonical from '@/components/seo/Canonical'
 import JsonLd from '@/components/seo/JsonLd'
 
+export const metadata: Metadata = {
+  title: 'Blog Jurídico • Artigos e Orientações',
+  description: 'Conteúdo jurídico produzido pela Neves & Costa Advocacia e Consultoria. Notícias, artigos e orientações práticas.',
+  alternates: { canonical: '/blog' },
+}
+
 interface UIPostCard {
   id: string
   title: string
