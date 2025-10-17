@@ -16,10 +16,19 @@ export async function POST(req: NextRequest) {
 
     const supabase = createClient(url, key)
 
-    // Update auth
-    if (email || password) {
-      const { error: updErr } = await (supabase.auth as any).admin.updateUserById(user_id, { email, password })
-      if (updErr) throw updErr
+    // Update auth (apenas se email ou password foram fornecidos)
+    const authUpdate: any = {}
+    if (email) authUpdate.email = email
+    if (password) authUpdate.password = password
+    
+    if (Object.keys(authUpdate).length > 0) {
+      console.log('[UPDATE] Updating auth with:', authUpdate)
+      const { error: updErr } = await supabase.auth.admin.updateUserById(user_id, authUpdate)
+      if (updErr) {
+        console.error('[UPDATE] Auth update error:', updErr)
+        throw new Error(`Erro ao atualizar autenticação: ${updErr.message}`)
+      }
+      console.log('[UPDATE] Auth updated successfully')
     }
 
     // Update profile role and identity fields (sanitize optional fields to avoid empty string conflicts)
