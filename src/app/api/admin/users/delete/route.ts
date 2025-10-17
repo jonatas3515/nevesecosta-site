@@ -35,18 +35,29 @@ export async function POST(req: NextRequest) {
     const { error: profErr } = await supabase.from('profiles').delete().eq('id', user_id)
     if (profErr) console.error('[DELETE USER] Error deleting profile:', profErr)
 
-    // Delete auth user
+    // Delete auth user (se existir)
     console.log('[DELETE USER] Deleting auth user...')
     try {
       const { data, error: delErr } = await supabase.auth.admin.deleteUser(user_id)
       if (delErr) {
-        console.error('[DELETE USER] Error deleting auth user:', delErr)
-        throw delErr
+        // Se o erro for "User not found", ignorar (usuário já foi deletado do Auth)
+        if (delErr.message?.includes('User not found') || delErr.message?.includes('not found')) {
+          console.log('[DELETE USER] User not found in Auth (already deleted or never existed)')
+        } else {
+          console.error('[DELETE USER] Error deleting auth user:', delErr)
+          throw delErr
+        }
+      } else {
+        console.log('[DELETE USER] Auth user deleted successfully:', data)
       }
-      console.log('[DELETE USER] Auth user deleted successfully:', data)
     } catch (authErr: any) {
-      console.error('[DELETE USER] Exception deleting auth user:', authErr)
-      throw new Error(`Falha ao excluir usuário do sistema de autenticação: ${authErr.message}`)
+      // Se o erro for "User not found", ignorar
+      if (authErr.message?.includes('User not found') || authErr.message?.includes('not found')) {
+        console.log('[DELETE USER] User not found in Auth (ignoring)')
+      } else {
+        console.error('[DELETE USER] Exception deleting auth user:', authErr)
+        throw new Error(`Falha ao excluir usuário do sistema de autenticação: ${authErr.message}`)
+      }
     }
 
     console.log('[DELETE USER] User deleted successfully')
