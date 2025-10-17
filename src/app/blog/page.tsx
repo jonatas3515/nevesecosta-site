@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabaseClient'
 import type { Metadata } from 'next'
 import Canonical from '@/components/seo/Canonical'
 import JsonLd from '@/components/seo/JsonLd'
+import Image from 'next/image'
 
 export const metadata: Metadata = {
   title: 'Blog Jurídico • Artigos e Orientações',
@@ -162,10 +163,12 @@ export default function BlogPage() {
                 >
                   {/* Image */}
                   <div className="relative h-48 bg-gray-200 overflow-hidden">
-                    <img
+                    <Image
                       src={post.image}
                       alt={post.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                     <div className="absolute top-4 left-4">
                       <span className="bg-gold-500 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold">
