@@ -162,6 +162,7 @@ export default function BlogPage() {
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover group-hover:scale-110 transition-transform duration-300"
+                      unoptimized
                     />
                     <div className="absolute top-4 left-4">
                       <span className="bg-gold-500 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold">
