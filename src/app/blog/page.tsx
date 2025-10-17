@@ -5,16 +5,9 @@ import Link from 'next/link'
 import { Calendar, Clock, User, ArrowRight } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabaseClient'
-import type { Metadata } from 'next'
 import Canonical from '@/components/seo/Canonical'
 import JsonLd from '@/components/seo/JsonLd'
 import Image from 'next/image'
-
-export const metadata: Metadata = {
-  title: 'Blog Jurídico • Artigos e Orientações',
-  description: 'Conteúdo jurídico produzido pela Neves & Costa Advocacia e Consultoria. Notícias, artigos e orientações práticas.',
-  alternates: { canonical: '/blog' },
-}
 
 interface UIPostCard {
   id: string
