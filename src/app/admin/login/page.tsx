@@ -18,22 +18,33 @@ export default function AdminLogin() {
       let email = ''
       if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(login)) {
         email = login
+        console.log('[LOGIN] Email detectado:', email)
       } else {
         // tentar resolver via profiles por username/cpf/phone
-        const { data: row } = await supabase
+        console.log('[LOGIN] Buscando usuário por username/cpf/phone:', login)
+        const { data: row, error: searchError } = await supabase
           .from('profiles')
           .select('email')
           .or(`username.eq.${login},cpf.eq.${login},phone.eq.${login}`)
           .maybeSingle()
+        
+        console.log('[LOGIN] Resultado da busca:', { row, searchError })
         email = row?.email || ''
       }
-      if (!email) throw new Error('Login não encontrado')
+      if (!email) throw new Error('Login não encontrado. Verifique se o usuário existe.')
       if (password.length < 7) throw new Error('A senha deve ter pelo menos 7 caracteres')
+      
+      console.log('[LOGIN] Tentando login com email:', email)
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw error
+      if (error) {
+        console.error('[LOGIN] Erro no login:', error)
+        throw error
+      }
+      console.log('[LOGIN] Login bem-sucedido!')
       window.location.href = '/admin/dashboard'
       return
     } catch (err: any) {
+      console.error('[LOGIN] Erro:', err)
       setError(err?.message || String(err))
     } finally {
       setLoading(false)

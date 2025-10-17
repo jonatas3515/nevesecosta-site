@@ -365,7 +365,21 @@ export default function AdminUsuariosPage() {
                       {u.full_name && <div><span className="text-gray-400">Nome Completo:</span> {u.full_name}</div>}
                       {u.phone && <div><span className="text-gray-400">WhatsApp:</span> {u.phone}</div>}
                       {u.cpf && <div><span className="text-gray-400">CPF:</span> {u.cpf}</div>}
-                      <div><span className="text-gray-400">Permissões:</span> {u.permissions ? Object.entries(u.permissions).filter(([k]) => k !== 'user_id' && k !== 'is_admin').map(([k,v]) => v ? k.replace('can_', '') : null).filter(Boolean).join(', ') || 'Nenhuma' : 'Nenhuma'}</div>
+                      <div><span className="text-gray-400">Permissões:</span> {u.permissions ? Object.entries(u.permissions)
+                        .filter(([k]) => k.startsWith('can_'))
+                        .map(([k,v]) => {
+                          if (!v) return null
+                          const labels: Record<string, string> = {
+                            can_posts: 'Posts',
+                            can_categories: 'Categorias',
+                            can_reviews: 'Avaliações',
+                            can_orders: 'Pedidos',
+                            can_products: 'Produtos'
+                          }
+                          return labels[k] || k.replace('can_', '')
+                        })
+                        .filter(Boolean)
+                        .join(', ') || 'Nenhuma' : 'Nenhuma'}</div>
                     </div>
                   </div>
                   <div className="flex gap-2">
