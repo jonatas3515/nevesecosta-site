@@ -121,19 +121,29 @@ export default function AdminUsuariosPage() {
       if (editForm.email) payload.email = editForm.email
       if (editForm.role) payload.role = editForm.role
       if (editForm.perms) payload.permissions = editForm.perms
-      if (editForm.username) payload.username = editForm.username
-      if (editForm.full_name) payload.full_name = editForm.full_name
-      if (editForm.phone) payload.phone = editForm.phone
-      if (editForm.cpf) payload.cpf = editForm.cpf
+      // Sempre enviar campos de identidade, mesmo que vazios
+      payload.username = editForm.username || ''
+      payload.full_name = editForm.full_name || ''
+      payload.phone = editForm.phone || ''
+      payload.cpf = editForm.cpf || ''
+      
+      console.log('[FRONTEND] Sending update payload:', payload)
       
       const r = await fetch('/api/admin/users/update', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
       const j = await r.json()
-      if (!r.ok) { show({ title: 'Falha ao atualizar usuário', description: j.error || undefined, variant: 'error' }); return }
+      
+      console.log('[FRONTEND] Update response:', { ok: r.ok, status: r.status, data: j })
+      
+      if (!r.ok) { 
+        show({ title: 'Falha ao atualizar usuário', description: j.error || undefined, variant: 'error' })
+        return 
+      }
       setEditingUserId(null)
       setEditForm({ user_id: '', email: '', role: undefined, perms: null, username: '', phone: '', cpf: '', full_name: '' })
       await load()
       show({ title: 'Usuário atualizado com sucesso', variant: 'success' })
     } catch (e: any) {
+      console.error('[FRONTEND] Update error:', e)
       show({ title: 'Erro ao atualizar', description: String(e?.message || e), variant: 'error' })
     } finally { setSaving(false) }
   }

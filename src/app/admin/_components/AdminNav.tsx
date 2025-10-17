@@ -9,7 +9,7 @@ const baseLinks = [
   { href: "/admin/dashboard", label: "Dashboard", key: "dashboard" },
   { href: "/admin/pedidos", label: "Pedidos", key: "can_orders" },
   { href: "/admin/posts", label: "Posts", key: "can_posts" },
-  { href: "/admin/categorias", label: "Categorias", key: "can_posts" },
+  { href: "/admin/categorias", label: "Categorias", key: "can_categories" },
   { href: "/admin/comentarios", label: "Comentários", key: "can_posts" },
   { href: "/admin/produtos", label: "Produtos", key: "can_products" },
   { href: "/admin/avaliacoes", label: "Avaliações", key: "can_reviews" },
@@ -18,7 +18,8 @@ const baseLinks = [
 
 export function AdminNav() {
   const pathname = usePathname();
-  const [allowed, setAllowed] = useState<{ is_admin?: boolean; can_posts?: boolean; can_reviews?: boolean; can_orders?: boolean; can_products?: boolean } | null>(null)
+  const [allowed, setAllowed] = useState<{ is_admin?: boolean; can_posts?: boolean; can_categories?: boolean; can_reviews?: boolean; can_orders?: boolean; can_products?: boolean } | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     const load = async () => {
@@ -32,9 +33,11 @@ export function AdminNav() {
       } catch {}
       try {
         const { data: perms } = await supabase.from('admin_permissions').select('*').eq('user_id', uid).maybeSingle();
+        console.log('[AdminNav] Permissions loaded:', perms)
         setAllowed({
           is_admin,
           can_posts: is_admin || !!perms?.can_posts,
+          can_categories: is_admin || !!perms?.can_categories || !!perms?.can_posts,
           can_reviews: is_admin || !!perms?.can_reviews,
           can_orders: is_admin || !!perms?.can_orders,
           can_products: is_admin || !!perms?.can_products,
@@ -44,7 +47,11 @@ export function AdminNav() {
       }
     }
     load()
-  }, [])
+    
+    // Recarregar permissões a cada 5 segundos para pegar mudanças
+    const interval = setInterval(load, 5000)
+    return () => clearInterval(interval)
+  }, [reloadKey])
 
   return (
     <nav className="mb-6 border-b border-gold-500/30 pb-4">

@@ -26,18 +26,31 @@ export async function POST(req: NextRequest) {
     const profileUpdate: any = { id: user_id }
     if (role) profileUpdate.role = role
     if (email) profileUpdate.email = email
-    if (username && String(username).trim()) profileUpdate.username = String(username).trim()
-    if (phone && String(phone).trim()) profileUpdate.phone = String(phone).trim()
-    if (cpf && String(cpf).trim()) profileUpdate.cpf = String(cpf).trim()
-    if (full_name && String(full_name).trim()) profileUpdate.full_name = String(full_name).trim()
+    if (username !== undefined) profileUpdate.username = String(username).trim() || null
+    if (phone !== undefined) profileUpdate.phone = String(phone).trim() || null
+    if (cpf !== undefined) profileUpdate.cpf = String(cpf).trim() || null
+    if (full_name !== undefined) profileUpdate.full_name = String(full_name).trim() || null
+    
+    console.log('[UPDATE] Profile update payload:', profileUpdate)
+    
     if (Object.keys(profileUpdate).length > 1) {
-      await supabase.from('profiles').upsert(profileUpdate, { onConflict: 'id' })
+      const { error: profileError, data: profileData } = await supabase.from('profiles').upsert(profileUpdate, { onConflict: 'id' })
+      if (profileError) {
+        console.error('[UPDATE] Profile update error:', profileError)
+        throw new Error(`Erro ao atualizar perfil: ${profileError.message}`)
+      }
+      console.log('[UPDATE] Profile updated successfully:', profileData)
     }
 
     // Update permissions
     if (permissions) {
-      const { error: permError } = await supabase.from('admin_permissions').upsert({ user_id, ...permissions }, { onConflict: 'user_id' })
-      if (permError) throw permError
+      console.log('[UPDATE] Permissions payload:', { user_id, ...permissions })
+      const { error: permError, data: permData } = await supabase.from('admin_permissions').upsert({ user_id, ...permissions }, { onConflict: 'user_id' })
+      if (permError) {
+        console.error('[UPDATE] Permissions update error:', permError)
+        throw new Error(`Erro ao atualizar permissões: ${permError.message}`)
+      }
+      console.log('[UPDATE] Permissions updated successfully:', permData)
     }
 
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } })
