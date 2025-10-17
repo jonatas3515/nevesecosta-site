@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
       is_admin: false,
       can_posts: false,
       can_categories: false,
+      can_comments: false,
       can_reviews: false,
       can_orders: false,
       can_products: false,

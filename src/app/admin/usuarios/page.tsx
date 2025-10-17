@@ -6,10 +6,11 @@ import { useToast } from '@/components/ui/toast'
 type Perms = {
   is_admin: boolean
   can_posts: boolean
+  can_categories: boolean
+  can_comments: boolean
   can_reviews: boolean
   can_orders: boolean
   can_products: boolean
-  can_categories: boolean
 }
 
 type UserRow = {
@@ -24,7 +25,7 @@ type UserRow = {
   permissions: (Perms & { user_id: string }) | null
 }
 
-const emptyPerms: Perms = { is_admin: false, can_posts: false, can_reviews: false, can_orders: false, can_products: false, can_categories: false }
+const emptyPerms: Perms = { is_admin: false, can_posts: false, can_categories: false, can_comments: false, can_reviews: false, can_orders: false, can_products: false }
 
 export default function AdminUsuariosPage() {
   const [items, setItems] = useState<UserRow[]>([])
@@ -302,17 +303,27 @@ export default function AdminUsuariosPage() {
               {[
                 { key: 'can_posts', label: 'Posts' },
                 { key: 'can_categories', label: 'Categorias' },
+                { key: 'can_comments', label: 'Comentários' },
                 { key: 'can_reviews', label: 'Avaliações' },
                 { key: 'can_orders', label: 'Pedidos PDF' },
                 { key: 'can_products', label: 'Produtos' },
-              ].map(p => (
-                <label key={p.key} className="flex items-center gap-2 text-sm text-gray-300">
-                  <input type="checkbox" checked={(createForm.perms as any)[p.key]} 
-                    onChange={e => setCreateForm(f => ({ ...f, perms: { ...f.perms, [p.key]: e.target.checked } }))} 
-                    className="rounded" />
-                  {p.label}
-                </label>
-              ))}
+              ].map(p => {
+                const isActive = (createForm.perms as any)[p.key]
+                return (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => setCreateForm(f => ({ ...f, perms: { ...f.perms, [p.key]: !isActive } }))}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive 
+                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                        : 'bg-red-600 text-white hover:bg-red-700'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
           <button type="submit" disabled={saving} 
@@ -368,21 +379,31 @@ export default function AdminUsuariosPage() {
                 </div>
                 <div className="mb-3">
                   <label className="block text-xs text-gray-400 mb-2">Permissões</label>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                     {[
                       { key: 'can_posts', label: 'Posts' },
                       { key: 'can_categories', label: 'Categorias' },
+                      { key: 'can_comments', label: 'Comentários' },
                       { key: 'can_reviews', label: 'Avaliações' },
                       { key: 'can_orders', label: 'Pedidos PDF' },
                       { key: 'can_products', label: 'Produtos' },
-                    ].map(p => (
-                      <label key={p.key} className="flex items-center gap-1 text-xs text-gray-300">
-                        <input type="checkbox" checked={(editForm.perms as any)?.[p.key] || false} 
-                          onChange={e => setEditForm(f => ({ ...f, perms: { ...(f.perms || emptyPerms), [p.key]: e.target.checked } }))} 
-                          className="rounded" />
-                        {p.label}
-                      </label>
-                    ))}
+                    ].map(p => {
+                      const isActive = (editForm.perms as any)?.[p.key] || false
+                      return (
+                        <button
+                          key={p.key}
+                          type="button"
+                          onClick={() => setEditForm(f => ({ ...f, perms: { ...(f.perms || emptyPerms), [p.key]: !isActive } }))}
+                          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                            isActive 
+                              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                              : 'bg-red-600 text-white hover:bg-red-700'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -420,6 +441,7 @@ export default function AdminUsuariosPage() {
                           const labels: Record<string, string> = {
                             can_posts: 'Posts',
                             can_categories: 'Categorias',
+                            can_comments: 'Comentários',
                             can_reviews: 'Avaliações',
                             can_orders: 'Pedidos',
                             can_products: 'Produtos'
@@ -440,7 +462,8 @@ export default function AdminUsuariosPage() {
                         perms: u.permissions ? { 
                           is_admin: !!u.permissions.is_admin, 
                           can_posts: !!u.permissions.can_posts, 
-                          can_categories: !!(u.permissions as any).can_categories, 
+                          can_categories: !!(u.permissions as any).can_categories,
+                          can_comments: !!(u.permissions as any).can_comments, 
                           can_reviews: !!u.permissions.can_reviews, 
                           can_orders: !!u.permissions.can_orders, 
                           can_products: !!u.permissions.can_products 

@@ -10,7 +10,7 @@ const baseLinks = [
   { href: "/admin/pedidos", label: "Pedidos", key: "can_orders" },
   { href: "/admin/posts", label: "Posts", key: "can_posts" },
   { href: "/admin/categorias", label: "Categorias", key: "can_categories" },
-  { href: "/admin/comentarios", label: "Comentários", key: "can_posts" },
+  { href: "/admin/comentarios", label: "Comentários", key: "can_comments" },
   { href: "/admin/produtos", label: "Produtos", key: "can_products" },
   { href: "/admin/avaliacoes", label: "Avaliações", key: "can_reviews" },
   { href: "/admin/usuarios", label: "Usuários", key: "is_admin" },
@@ -18,7 +18,7 @@ const baseLinks = [
 
 export function AdminNav() {
   const pathname = usePathname();
-  const [allowed, setAllowed] = useState<{ is_admin?: boolean; can_posts?: boolean; can_categories?: boolean; can_reviews?: boolean; can_orders?: boolean; can_products?: boolean } | null>(null)
+  const [allowed, setAllowed] = useState<{ is_admin?: boolean; can_posts?: boolean; can_categories?: boolean; can_comments?: boolean; can_reviews?: boolean; can_orders?: boolean; can_products?: boolean } | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
@@ -37,7 +37,8 @@ export function AdminNav() {
         setAllowed({
           is_admin,
           can_posts: is_admin || !!perms?.can_posts,
-          can_categories: is_admin || !!perms?.can_categories || !!perms?.can_posts,
+          can_categories: is_admin || !!perms?.can_categories,
+          can_comments: is_admin || !!perms?.can_comments,
           can_reviews: is_admin || !!perms?.can_reviews,
           can_orders: is_admin || !!perms?.can_orders,
           can_products: is_admin || !!perms?.can_products,
