@@ -11,11 +11,14 @@ interface Row {
   status: 'draft' | 'published'
   created_at: string
   published_at: string | null
+  created_by: string | null
+  author_name?: string | null
 }
 
 export default function AdminPostsList() {
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(false)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -29,6 +32,8 @@ export default function AdminPostsList() {
       .select('id, title, slug, status, created_at, published_at, created_by')
       .order('created_at', { ascending: false })
     
+    let isSuper = false
+    
     // Se não for super admin, filtrar apenas posts do próprio usuário
     if (userId) {
       const { data: profile } = await supabase
@@ -37,15 +42,36 @@ export default function AdminPostsList() {
         .eq('id', userId)
         .single()
       
-      const isSuperAdmin = profile?.email?.toLowerCase() === 'jonatascosta.adv@gmail.com'
+      isSuper = profile?.email?.toLowerCase() === 'jonatascosta.adv@gmail.com'
+      setIsSuperAdmin(isSuper)
       
-      if (!isSuperAdmin) {
+      if (!isSuper) {
         query = query.eq('created_by', userId)
       }
     }
     
     const { data } = await query
-    setRows((data as Row[]) || [])
+    
+    // Se for super admin, buscar nomes dos autores
+    if (isSuper && data) {
+      const authorIds = [...new Set(data.map(p => p.created_by).filter(Boolean))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', authorIds)
+      
+      const profileMap = new Map(profiles?.map(p => [p.id, p.full_name || p.email]) || [])
+      
+      const postsWithAuthors = data.map(post => ({
+        ...post,
+        author_name: post.created_by ? profileMap.get(post.created_by) || 'Desconhecido' : 'Sem autor'
+      }))
+      
+      setRows(postsWithAuthors as Row[])
+    } else {
+      setRows((data as Row[]) || [])
+    }
+    
     setLoading(false)
   }
 
@@ -82,6 +108,7 @@ export default function AdminPostsList() {
             <tr className="bg-gray-800 text-gray-100">
               <th className="p-3">Título</th>
               <th className="p-3">Slug</th>
+              {isSuperAdmin && <th className="p-3">Autor</th>}
               <th className="p-3">Status</th>
               <th className="p-3">Publicado em</th>
               <th className="p-3 w-80">Ações</th>
@@ -92,6 +119,7 @@ export default function AdminPostsList() {
               <tr key={r.id} className="border-t border-gray-600">
                 <td className="p-3">{r.title}</td>
                 <td className="p-3">{r.slug}</td>
+                {isSuperAdmin && <td className="p-3 text-gray-400 text-sm">{r.author_name || '—'}</td>}
                 <td className="p-3 capitalize">{r.status}</td>
                 <td className="p-3">{r.published_at ? new Date(r.published_at).toLocaleString('pt-BR') : '—'}</td>
                 <td className="p-3 flex gap-2">

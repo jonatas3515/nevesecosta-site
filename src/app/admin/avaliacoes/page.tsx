@@ -19,6 +19,7 @@ export default function AdminAvaliacoesPage() {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<Review>({ name: '', rating: 5, comment: '', comment_date: new Date().toISOString().slice(0,10) })
   const [hasAccess, setHasAccess] = useState<boolean | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null)
   const router = useRouter()
   const { show } = useToast()
 
@@ -66,17 +67,19 @@ export default function AdminAvaliacoesPage() {
     })
   }, [])
 
-  const remove = async (id?: string) => {
+  const remove = async (id: string) => {
     if (!id) return
-    if (!confirm('Tem certeza que deseja excluir esta avaliação?')) return
+    setSaving(true)
     try {
-      const r = await fetch('/api/admin/reviews/delete', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id }) })
-      const j = await r.json()
-      if (!r.ok) { show({ title: 'Falha ao excluir', description: j.error || undefined, variant: 'error' }); return }
+      const { error } = await supabase.from('reviews').delete().eq('id', id)
+      if (error) throw error
       show({ title: 'Avaliação excluída com sucesso', variant: 'success' })
+      setConfirmDelete(null)
       await load()
     } catch (e: any) {
       show({ title: 'Erro ao excluir', description: String(e?.message || e), variant: 'error' })
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -149,16 +152,40 @@ export default function AdminAvaliacoesPage() {
             <div className="text-sm mt-2 whitespace-pre-line text-gray-300">{it.comment}</div>
             <div className="mt-2 flex gap-2">
               <button className="px-3 py-1 text-sm border border-gray-600 rounded text-gray-300 hover:bg-gray-600" onClick={() => edit(it)}>Editar</button>
-              <button className="px-3 py-1 text-sm border border-red-600 rounded text-red-400 hover:bg-red-600 hover:text-white" onClick={() => {
-                if (window.confirm('Tem certeza que deseja excluir esta avaliação?')) {
-                  remove(it.id)
-                }
-              }}>Excluir</button>
+              <button className="px-3 py-1 text-sm border border-red-600 rounded text-red-400 hover:bg-red-600 hover:text-white" onClick={() => setConfirmDelete({ id: it.id!, name: it.name })}>Excluir</button>
             </div>
           </div>
         ))}
         {items.length === 0 && !loading && <div className="text-sm text-gray-400">Nenhuma avaliação encontrada.</div>}
       </div>
+
+      {/* Modal de confirmação */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setConfirmDelete(null)}>
+          <div className="bg-gray-800 border border-gold-500/30 rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-gold-500 mb-4">Confirmar Exclusão</h3>
+            <p className="text-gray-300 mb-6">
+              Tem certeza que deseja excluir a avaliação de <strong className="text-white">{confirmDelete.name}</strong>?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button 
+                onClick={() => setConfirmDelete(null)} 
+                className="px-4 py-2 border border-gray-600 rounded-md text-gray-300 hover:bg-gray-700"
+                disabled={saving}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => remove(confirmDelete.id)} 
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-600"
+                disabled={saving}
+              >
+                {saving ? 'Excluindo...' : 'Excluir'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
