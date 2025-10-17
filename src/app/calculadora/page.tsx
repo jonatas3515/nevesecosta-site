@@ -787,6 +787,17 @@ export default function CalculadoraRescisoria() {
               recomendamos consultar um advogado especializado em Direito Trabalhista.
             </p>
           </div>
+
+          {/* CTAs de Links Internos */}
+          <div className="mt-8 bg-gray-900 rounded-2xl p-8 border border-gold-500/20">
+            <h3 className="text-2xl font-bold text-white mb-4 text-center">Aprofunde-se e saiba mais</h3>
+            <p className="text-gray-300 text-center mb-6">Conheça nossas áreas de atuação ou leia nossos artigos no Blog.</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <a href="/areas" className="px-6 py-3 rounded-lg bg-gold-500 text-gray-900 font-semibold hover:bg-gold-600">Áreas de Atuação</a>
+              <a href="/blog" className="px-6 py-3 rounded-lg bg-gray-800 text-white font-semibold hover:bg-gray-700">Blog</a>
+              <a href="/#contato" className="px-6 py-3 rounded-lg bg-white text-gray-900 font-semibold hover:bg-gray-200">Fale Conosco</a>
+            </div>
+          </div>
         </div>
       </div>
       {/* Modal de Pagamento */}

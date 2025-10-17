@@ -273,6 +273,20 @@ export default function ConsultaProcesso() {
           </div>
         </div>
       </div>
+      {/* CTAs de Links Internos */}
+      <div className="bg-gray-900 py-8">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto bg-black border border-gold-500/20 rounded-2xl p-8 text-center">
+            <h3 className="text-2xl font-bold text-white mb-4">Precisa de assistência com seu processo?</h3>
+            <p className="text-gray-300 mb-6">Conheça nossas áreas de atuação, leia o Blog ou fale com nossa equipe.</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <a href="/areas" className="px-6 py-3 rounded-lg bg-gold-500 text-gray-900 font-semibold hover:bg-gold-600">Áreas de Atuação</a>
+              <a href="/blog" className="px-6 py-3 rounded-lg bg-gray-800 text-white font-semibold hover:bg-gray-700">Blog</a>
+              <a href="/#contato" className="px-6 py-3 rounded-lg bg-white text-gray-900 font-semibold hover:bg-gray-200">Fale Conosco</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

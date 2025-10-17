@@ -108,12 +108,26 @@ export default function EquipePage() {
           <p className="text-gray-300 mb-6">
             Nossa equipe está pronta para cuidar do seu direito com dedicação e expertise.
           </p>
-          <Link
-            href="/#contato"
-            className="inline-block bg-gold-500 text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-gold-600 transition-colors"
-          >
-            Entre em Contato
-          </Link>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link
+              href="/areas"
+              className="inline-block bg-white text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+            >
+              Áreas de Atuação
+            </Link>
+            <Link
+              href="/blog"
+              className="inline-block bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+            >
+              Blog
+            </Link>
+            <Link
+              href="/#contato"
+              className="inline-block bg-gold-500 text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-gold-600 transition-colors"
+            >
+              Entre em Contato
+            </Link>
+          </div>
         </div>
       </div>
     </div>
