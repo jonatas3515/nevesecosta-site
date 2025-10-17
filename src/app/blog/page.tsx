@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { Calendar, Clock, User, ArrowRight } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabaseClient'
+import type { Metadata } from 'next'
+import Canonical from '@/components/seo/Canonical'
+import JsonLd from '@/components/seo/JsonLd'
 
 interface UIPostCard {
   id: string
@@ -89,6 +92,17 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Canonical + BreadcrumbList */}
+      <Canonical />
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Blog', item: 'https://www.nevesecosta.com.br/blog' },
+          ],
+        }}
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white py-20">
         <div className="container mx-auto px-4">
