@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabaseClient'
 import MarkdownIt from 'markdown-it'
 import JsonLd from '@/components/seo/JsonLd'
 import Canonical from '@/components/seo/Canonical'
+import Image from 'next/image'
 
 interface UiComment {
   id: string
@@ -40,6 +41,7 @@ export default function BlogPostPage() {
 
   const [comments, setComments] = useState<UiComment[]>([])
   const [loading, setLoading] = useState(true)
+  const [related, setRelated] = useState<{ id: string; title: string; slug: string; cover_url?: string }[]>([])
 
   const [newComment, setNewComment] = useState({ author: '', content: '' })
   const [replyTo, setReplyTo] = useState<string | null>(null)
@@ -62,13 +64,14 @@ export default function BlogPostPage() {
         return
       }
 
-      // Buscar uma categoria principal (opcional)
+      // Buscar uma categoria principal (opcional) com id para relacionados
       const { data: pc } = await supabase
         .from('post_categories')
-        .select('category:categories(name)')
+        .select('category:categories(id, name)')
         .eq('post_id', p.id)
 
       const category = pc && pc.length > 0 ? (pc[0] as any).category?.name ?? 'Geral' : 'Geral'
+      const categoryId = pc && pc.length > 0 ? (pc[0] as any).category?.id ?? null : null
 
       // Fallback: se content_html vier vazio ou com mensagem de erro, gerar localmente a partir de content_md
       let html: string | undefined = p.content_html
@@ -92,6 +95,35 @@ export default function BlogPostPage() {
         category,
         author: (p as any).author_name || 'Equipe Neves & Costa',
       })
+
+      // Carregar posts relacionados (mesma categoria)
+      try {
+        if (categoryId) {
+          const { data: relIds } = await supabase
+            .from('post_categories')
+            .select('post_id')
+            .eq('category_id', categoryId)
+            .neq('post_id', p.id)
+            .limit(8)
+          const ids = (relIds || []).map((r: any) => r.post_id)
+          if (ids.length) {
+            const { data: relPosts } = await supabase
+              .from('posts')
+              .select('id, title, slug, cover_url, status, published_at')
+              .in('id', ids)
+              .eq('status', 'published')
+              .order('published_at', { ascending: false })
+              .limit(3)
+            setRelated((relPosts || []).map((rp: any) => ({ id: rp.id, title: rp.title, slug: rp.slug, cover_url: rp.cover_url })))
+          } else {
+            setRelated([])
+          }
+        } else {
+          setRelated([])
+        }
+      } catch {
+        setRelated([])
+      }
 
       // Comentários aprovados (inclui respostas da equipe)
       const { data: cmts } = await supabase
@@ -325,12 +357,15 @@ export default function BlogPostPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             {/* Featured Image */}
-            <div className="mb-8 rounded-lg overflow-hidden shadow-lg">
+            <div className="mb-8 rounded-lg overflow-hidden shadow-lg relative h-96">
               {post && (
-                <img
+                <Image
                   src={post.cover_url || 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1200'}
                   alt={post.title}
-                  className="w-full h-96 object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
+                  className="object-cover"
+                  priority
                 />
               )}
             </div>
@@ -343,6 +378,29 @@ export default function BlogPostPage() {
                 style={{ lineHeight: '1.8' }}
               />
             </article>
+
+            {/* Related Posts */}
+            {related.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-8 md:p-12 mb-12">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Posts relacionados</h2>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {related.map((r) => (
+                    <Link key={r.id} href={`/blog/${r.slug}`} className="block group">
+                      <div className="relative h-40 rounded-lg overflow-hidden">
+                        <Image
+                          src={r.cover_url || 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800'}
+                          alt={r.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                      </div>
+                      <h3 className="mt-3 font-semibold text-gray-900 line-clamp-2 group-hover:text-primary-600">{r.title}</h3>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Comments Section */}
             <div className="bg-white rounded-lg shadow-md p-8 md:p-12">
