@@ -118,32 +118,32 @@ export default function NovoPost() {
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Novo Post</h2>
+    <div className="space-y-6 text-gray-100">
+      <h2 className="text-2xl font-bold text-gold-500">Novo Post</h2>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm mb-1">Título</label>
-            <input className="w-full border rounded-md px-3 py-2" {...register('title', { onChange: () => setDirty(true) })} />
-            {errors.title && <div className="text-red-600 text-sm mt-1">{errors.title.message}</div>}
+            <label className="block text-sm mb-1 text-gray-300">Título</label>
+            <input className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" {...register('title', { onChange: () => setDirty(true) })} />
+            {errors.title && <div className="text-red-400 text-sm mt-1">{errors.title.message}</div>}
           </div>
           <div>
-            <label className="block text-sm mb-1">Subtítulo</label>
-            <input className="w-full border rounded-md px-3 py-2" {...register('subtitle', { onChange: () => setDirty(true) })} />
+            <label className="block text-sm mb-1 text-gray-300">Subtítulo</label>
+            <input className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" {...register('subtitle', { onChange: () => setDirty(true) })} />
           </div>
           <div>
-            <label className="block text-sm mb-1">Autor</label>
-            <input className="w-full border rounded-md px-3 py-2" {...register('author_name', { onChange: () => setDirty(true) })} />
-            {errors.author_name && <div className="text-red-600 text-sm mt-1">{errors.author_name.message}</div>}
+            <label className="block text-sm mb-1 text-gray-300">Autor</label>
+            <input className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" {...register('author_name', { onChange: () => setDirty(true) })} />
+            {errors.author_name && <div className="text-red-400 text-sm mt-1">{errors.author_name.message}</div>}
           </div>
           <div>
-            <label className="block text-sm mb-1">Slug</label>
-            <input className="w-full border rounded-md px-3 py-2" placeholder="auto do título" {...register('slug', { onChange: () => setDirty(true) })} />
-            {errors.slug && <div className="text-red-600 text-sm mt-1">{errors.slug.message}</div>}
+            <label className="block text-sm mb-1 text-gray-300">Slug</label>
+            <input className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" placeholder="auto do título" {...register('slug', { onChange: () => setDirty(true) })} />
+            {errors.slug && <div className="text-red-400 text-sm mt-1">{errors.slug.message}</div>}
           </div>
           <div>
-            <label className="block text-sm mb-1">URL da Imagem (cover_url)</label>
-            <input className="w-full border rounded-md px-3 py-2" value={coverUrl} onChange={(e) => { setCoverUrl(e.target.value); setDirty(true) }} />
+            <label className="block text-sm mb-1 text-gray-300">URL da Imagem (cover_url)</label>
+            <input className="w-full border border-gray-600 bg-gray-800 text-gray-100 rounded-md px-3 py-2" value={coverUrl} onChange={(e) => { setCoverUrl(e.target.value); setDirty(true) }} />
             <input
               type="file"
               accept="image/*"
@@ -160,14 +160,14 @@ export default function NovoPost() {
               }}
               className="mt-2 block"
             />
-            {uploading && <div className="text-sm text-gray-500 mt-1">Enviando imagem...</div>}
-            {uploadError && <div className="text-sm text-red-600 mt-1">{uploadError}</div>}
+            {uploading && <div className="text-sm text-gray-400 mt-1">Enviando imagem...</div>}
+            {uploadError && <div className="text-sm text-red-400 mt-1">{uploadError}</div>}
             {coverUrl && <img src={coverUrl} alt="cover" className="mt-2 h-40 rounded-md object-cover" />}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm mb-1">Conteúdo (Markdown)</label>
+          <label className="block text-sm mb-1 text-gray-300">Conteúdo (Markdown)</label>
           <div data-color-mode="light">
             <MDEditor value={content} onChange={(v) => { setContent(v); setDirty(true) }} height={400} previewOptions={{ className: 'prose max-w-none' }} />
           </div>
@@ -180,19 +180,19 @@ export default function NovoPost() {
         </div>
 
         <div>
-          <label className="block text-sm mb-2">Categorias</label>
+          <label className="block text-sm mb-2 text-gray-300">Categorias</label>
           <div className="flex flex-wrap gap-2">
             {categories.map((c) => (
-              <button type="button" key={c.id} onClick={() => toggleCat(c.id)} className={`px-3 py-1 rounded-full border ${selectedCats.includes(c.id) ? 'bg-primary-600 text-white' : 'bg-white'}`}>
+              <button type="button" key={c.id} onClick={() => toggleCat(c.id)} className={`px-3 py-1 rounded-full border ${selectedCats.includes(c.id) ? 'bg-gold-500 text-gray-900 border-gold-500' : 'bg-gray-700 text-gray-300 border-gray-600 hover:border-gold-500'}`}>
                 {c.name}
               </button>
             ))}
-            {categories.length === 0 && <div className="text-gray-500 text-sm">Nenhuma categoria. Crie em /admin/categorias.</div>}
+            {categories.length === 0 && <div className="text-gray-400 text-sm">Nenhuma categoria. Crie em /admin/categorias.</div>}
           </div>
         </div>
 
         <div className="flex gap-3">
-          <button disabled={loading} className="bg-primary-600 text-white px-4 py-2 rounded-md">{loading ? 'Salvando...' : 'Salvar como Rascunho'}</button>
+          <button disabled={loading} className="bg-gold-500 text-gray-900 px-4 py-2 rounded-md hover:bg-gold-600 disabled:bg-gray-600 disabled:text-gray-400 font-medium">{loading ? 'Salvando...' : 'Salvar como Rascunho'}</button>
         </div>
       </form>
     </div>

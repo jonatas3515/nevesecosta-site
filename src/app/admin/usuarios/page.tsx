@@ -9,6 +9,7 @@ type Perms = {
   can_reviews: boolean
   can_orders: boolean
   can_products: boolean
+  can_categories: boolean
 }
 
 type UserRow = {
@@ -23,7 +24,7 @@ type UserRow = {
   permissions: (Perms & { user_id: string }) | null
 }
 
-const emptyPerms: Perms = { is_admin: false, can_posts: false, can_reviews: false, can_orders: false, can_products: false }
+const emptyPerms: Perms = { is_admin: false, can_posts: false, can_reviews: false, can_orders: false, can_products: false, can_categories: false }
 
 export default function AdminUsuariosPage() {
   const [items, setItems] = useState<UserRow[]>([])
@@ -35,6 +36,7 @@ export default function AdminUsuariosPage() {
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
   const [changingPasswordUserId, setChangingPasswordUserId] = useState<string | null>(null)
   const [newPassword, setNewPassword] = useState('')
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
   const { show } = useToast()
 
   const [createForm, setCreateForm] = useState<{ email: string; password: string; role: string; perms: Perms; username?: string; phone?: string; cpf?: string; full_name?: string }>({ 
@@ -64,12 +66,8 @@ export default function AdminUsuariosPage() {
     try {
       const r = await fetch('/api/admin/users/list')
       const j = await r.json()
-      console.log('[FRONTEND] API response:', j)
-      console.log('[FRONTEND] Total items from API:', j.items?.length || 0)
       // Filter out super admin from list
       const filtered = (j.items || []).filter((u: UserRow) => u.email?.toLowerCase() !== 'jonatascosta.adv@gmail.com')
-      console.log('[FRONTEND] Items after filtering super admin:', filtered.length)
-      console.log('[FRONTEND] Filtered items:', filtered.map((u: UserRow) => u.email))
       setItems(filtered)
     } catch (e) {} finally { setLoading(false) }
   }
@@ -128,9 +126,6 @@ export default function AdminUsuariosPage() {
       if (editForm.phone) payload.phone = editForm.phone
       if (editForm.cpf) payload.cpf = editForm.cpf
       
-      console.log('[FRONTEND] Update payload:', payload)
-      console.log('[FRONTEND] editForm.perms:', editForm.perms)
-      
       const r = await fetch('/api/admin/users/update', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
       const j = await r.json()
       if (!r.ok) { show({ title: 'Falha ao atualizar usuário', description: j.error || undefined, variant: 'error' }); return }
@@ -165,8 +160,8 @@ export default function AdminUsuariosPage() {
     } finally { setSaving(false) }
   }
 
-  const deleteUser = async (userId: string, email: string) => {
-    if (!confirm(`Tem certeza que deseja remover o usuário ${email}?`)) return
+  const deleteUser = async (userId: string) => {
+    setSaving(true)
     try {
       const r = await fetch('/api/admin/users/delete', { 
         method: 'POST', 
@@ -175,11 +170,13 @@ export default function AdminUsuariosPage() {
       })
       const j = await r.json()
       if (!r.ok) { show({ title: 'Falha ao remover usuário', description: j.error || undefined, variant: 'error' }); return }
-      await load()
+      setDeletingUserId(null)
+      // Atualizar lista imediatamente removendo o usuário do estado
+      setItems(prev => prev.filter(u => u.id !== userId))
       show({ title: 'Usuário removido com sucesso', variant: 'success' })
     } catch (e: any) {
       show({ title: 'Erro ao remover', description: String(e?.message || e), variant: 'error' })
-    }
+    } finally { setSaving(false) }
   }
 
   if (checkingAccess) return <div className="text-gray-300">Verificando permissões...</div>
@@ -246,6 +243,7 @@ export default function AdminUsuariosPage() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
                 { key: 'can_posts', label: 'Posts' },
+                { key: 'can_categories', label: 'Categorias' },
                 { key: 'can_reviews', label: 'Avaliações' },
                 { key: 'can_orders', label: 'Pedidos PDF' },
                 { key: 'can_products', label: 'Produtos' },
@@ -312,9 +310,10 @@ export default function AdminUsuariosPage() {
                 </div>
                 <div className="mb-3">
                   <label className="block text-xs text-gray-400 mb-2">Permissões</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {[
                       { key: 'can_posts', label: 'Posts' },
+                      { key: 'can_categories', label: 'Categorias' },
                       { key: 'can_reviews', label: 'Avaliações' },
                       { key: 'can_orders', label: 'Pedidos PDF' },
                       { key: 'can_products', label: 'Produtos' },
@@ -369,6 +368,7 @@ export default function AdminUsuariosPage() {
                         perms: u.permissions ? { 
                           is_admin: !!u.permissions.is_admin, 
                           can_posts: !!u.permissions.can_posts, 
+                          can_categories: !!(u.permissions as any).can_categories, 
                           can_reviews: !!u.permissions.can_reviews, 
                           can_orders: !!u.permissions.can_orders, 
                           can_products: !!u.permissions.can_products 
@@ -386,7 +386,7 @@ export default function AdminUsuariosPage() {
                       className="px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700">
                       🔑 Alterar Senha
                     </button>
-                    <button onClick={() => deleteUser(u.id, u.email)}
+                    <button onClick={() => setDeletingUserId(u.id)}
                       className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">
                       🗑️ Remover
                     </button>
@@ -416,6 +416,35 @@ export default function AdminUsuariosPage() {
         ))}
         {items.length === 0 && !loading && <div className="text-gray-400 text-center py-8">Nenhum usuário cadastrado ainda.</div>}
       </div>
+
+      {/* Modal de confirmação de exclusão */}
+      {deletingUserId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 border border-gold-500/30">
+            <h3 className="text-xl font-bold text-gold-500 mb-4">Confirmar Exclusão</h3>
+            <p className="text-gray-300 mb-6">
+              Tem certeza que deseja remover o usuário <strong>{items.find(u => u.id === deletingUserId)?.email}</strong>?
+              Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeletingUserId(null)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-500"
+                disabled={saving}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => deleteUser(deletingUserId)}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-600"
+                disabled={saving}
+              >
+                {saving ? 'Removendo...' : 'Sim, Remover'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

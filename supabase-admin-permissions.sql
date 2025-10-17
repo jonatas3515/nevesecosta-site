@@ -3,6 +3,7 @@ create table if not exists public.admin_permissions (
   user_id uuid primary key,
   is_admin boolean not null default false,
   can_posts boolean not null default false,
+  can_categories boolean not null default false,
   can_reviews boolean not null default false,
   can_orders boolean not null default false,
   can_products boolean not null default false,

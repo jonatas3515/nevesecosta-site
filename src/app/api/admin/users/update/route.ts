@@ -8,7 +8,6 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { user_id, email, password, role, permissions, username, phone, cpf, full_name } = body || {}
-    console.log('[UPDATE USER] Payload received:', { user_id, email, role, permissions, username, phone, cpf, full_name })
     if (!user_id) return new Response(JSON.stringify({ error: 'user_id required' }), { status: 400 })
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -37,16 +36,10 @@ export async function POST(req: NextRequest) {
 
     // Update permissions
     if (permissions) {
-      console.log('[UPDATE USER] Updating permissions:', { user_id, ...permissions })
       const { error: permError } = await supabase.from('admin_permissions').upsert({ user_id, ...permissions }, { onConflict: 'user_id' })
-      if (permError) {
-        console.error('[UPDATE USER] Permission update error:', permError)
-        throw permError
-      }
-      console.log('[UPDATE USER] Permissions updated successfully')
+      if (permError) throw permError
     }
 
-    console.log('[UPDATE USER] Update completed successfully')
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'content-type': 'application/json' } })
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message || String(e) }), { status: 500, headers: { 'content-type': 'application/json' } })

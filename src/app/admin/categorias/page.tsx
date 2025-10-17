@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useToast } from '@/components/ui/toast'
 import { useForm } from 'react-hook-form'
@@ -9,8 +10,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 
 export default function AdminCategorias() {
   const { show } = useToast()
+  const router = useRouter()
   const [categories, setCategories] = useState<{ id: string; name: string; slug: string }[]>([])
   const [loading, setLoading] = useState(false)
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null)
 
   const schema = z.object({
     name: z.string().min(2, 'Nome muito curto'),
@@ -29,13 +32,39 @@ export default function AdminCategorias() {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { name: '', slug: '' } })
 
+  const checkPerms = async () => {
+    const { data } = await supabase.auth.getSession()
+    const uid = data.session?.user?.id
+    if (!uid) { router.push('/admin/login'); return false }
+    
+    try {
+      const { data: prof } = await supabase.from('profiles').select('role').eq('id', uid).single()
+      const isAdmin = prof?.role === 'admin'
+      const { data: perms } = await supabase.from('admin_permissions').select('*').eq('user_id', uid).maybeSingle()
+      const canCategories = isAdmin || !!perms?.can_categories || !!perms?.can_posts
+      
+      if (!canCategories) { 
+        show({ title: 'Acesso negado', description: 'Você não tem permissão para gerenciar categorias.', variant: 'error' })
+        router.push('/admin')
+        return false 
+      }
+      setHasAccess(true)
+      return true
+    } catch {
+      router.push('/admin')
+      return false
+    }
+  }
+
   const load = async () => {
     const { data } = await supabase.from('categories').select('id, name, slug').order('name')
     setCategories(data || [])
   }
 
   useEffect(() => {
-    load()
+    checkPerms().then(hasAccess => {
+      if (hasAccess) load()
+    })
   }, [])
 
   const createCategory = async (data: FormData) => {
@@ -59,6 +88,14 @@ export default function AdminCategorias() {
       show({ title: 'Categoria excluída', variant: 'success' })
       await load()
     }
+  }
+
+  if (hasAccess === null) {
+    return <div className="text-gray-300">Verificando permissões...</div>
+  }
+
+  if (!hasAccess) {
+    return null
   }
 
   return (
