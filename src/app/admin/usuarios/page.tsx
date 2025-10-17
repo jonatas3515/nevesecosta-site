@@ -66,12 +66,20 @@ export default function AdminUsuariosPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const r = await fetch('/api/admin/users/list')
+      console.log('[FRONTEND] Loading user list...')
+      const r = await fetch('/api/admin/users/list', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      })
       const j = await r.json()
+      console.log('[FRONTEND] Received', j.items?.length || 0, 'users from API')
       // Filter out super admin from list
       const filtered = (j.items || []).filter((u: UserRow) => u.email?.toLowerCase() !== 'jonatascosta.adv@gmail.com')
+      console.log('[FRONTEND] After filtering super admin:', filtered.length, 'users')
       setItems(filtered)
-    } catch (e) {} finally { setLoading(false) }
+    } catch (e) {
+      console.error('[FRONTEND] Error loading users:', e)
+    } finally { setLoading(false) }
   }
 
   useEffect(() => { checkSuperAdmin(); load() }, [])
@@ -211,7 +219,10 @@ export default function AdminUsuariosPage() {
   return (
     <div className="text-gray-100">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gold-500">Gerenciamento de Usuários</h2>
+        <h2 className="text-2xl font-bold text-gold-500">
+          Gerenciamento de Usuários 
+          <span className="ml-3 text-lg text-gray-400">({items.length})</span>
+        </h2>
         <button 
           onClick={() => setShowCreateForm(!showCreateForm)}
           className="px-4 py-2 bg-gold-500 text-gray-900 rounded-md hover:bg-gold-600 font-medium"

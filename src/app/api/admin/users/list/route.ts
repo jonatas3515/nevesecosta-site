@@ -12,17 +12,21 @@ export async function GET(req: NextRequest) {
 
     const supabase = createClient(url, key)
 
-    // List first 100 users
-    const { data: usersData, error: usersError } = await (supabase.auth as any).admin.listUsers({ page: 1, perPage: 100 })
+    // List ALL users (sem paginação para garantir que pega todos)
+    const { data: usersData, error: usersError } = await (supabase.auth as any).admin.listUsers({ page: 1, perPage: 1000 })
     if (usersError) throw usersError
+    
+    console.log('[LIST USERS] Total users from auth:', usersData?.users?.length || 0)
 
     // Load permissions map
     const { data: perms } = await supabase.from('admin_permissions').select('*')
     const permsMap = new Map((perms || []).map((p: any) => [p.user_id, p]))
+    console.log('[LIST USERS] Total permissions:', perms?.length || 0)
 
     // Load profiles with all fields
     const { data: profiles } = await supabase.from('profiles').select('id, role, username, phone, cpf, email, full_name')
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+    console.log('[LIST USERS] Total profiles:', profiles?.length || 0)
 
     const items = (usersData?.users || []).map((u: any) => {
       const profile = profileMap.get(u.id)
@@ -38,8 +42,16 @@ export async function GET(req: NextRequest) {
         full_name: profile?.full_name || null,
       }
     })
+    
+    console.log('[LIST USERS] Returning', items.length, 'users')
 
-    return new Response(JSON.stringify({ items }), { status: 200, headers: { 'content-type': 'application/json' } })
+    return new Response(JSON.stringify({ items }), { 
+      status: 200, 
+      headers: { 
+        'content-type': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+      } 
+    })
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message || String(e) }), { status: 500, headers: { 'content-type': 'application/json' } })
   }
