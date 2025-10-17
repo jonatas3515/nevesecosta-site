@@ -16,13 +16,18 @@ export async function GET(req: NextRequest) {
     const { data: usersData, error: usersError } = await (supabase.auth as any).admin.listUsers({ page: 1, perPage: 100 })
     if (usersError) throw usersError
 
+    console.log('[LIST USERS] Total auth users found:', usersData?.users?.length || 0)
+    console.log('[LIST USERS] Auth users emails:', (usersData?.users || []).map((u: any) => u.email))
+
     // Load permissions map
     const { data: perms } = await supabase.from('admin_permissions').select('*')
     const permsMap = new Map((perms || []).map((p: any) => [p.user_id, p]))
+    console.log('[LIST USERS] Permissions found:', perms?.length || 0)
 
     // Load profiles with all fields
     const { data: profiles } = await supabase.from('profiles').select('id, role, username, phone, cpf, email, full_name')
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+    console.log('[LIST USERS] Profiles found:', profiles?.length || 0)
 
     const items = (usersData?.users || []).map((u: any) => {
       const profile = profileMap.get(u.id)

@@ -19,16 +19,27 @@ export async function POST(req: NextRequest) {
 
     // Create auth user
     const { data: created, error: createErr } = await (supabase.auth as any).admin.createUser({ email, password, email_confirm: true })
-    if (createErr) throw createErr
+    if (createErr) {
+      // Better error message for duplicate email
+      if (createErr.message?.includes('already been registered') || createErr.message?.includes('already exists')) {
+        throw new Error(`O email ${email} já está cadastrado no sistema. Use outro email ou edite o usuário existente.`)
+      }
+      throw createErr
+    }
     const user = (created as any)?.user
     if (!user) throw new Error('user not created')
 
-    // Upsert profile role
-    await supabase.from('profiles').upsert({ id: user.id, role, email, username, phone, cpf, full_name }, { onConflict: 'id' })
+    // Upsert profile with only provided optional fields (avoid empty strings conflicting with unique indexes)
+    const profilePayload: any = { id: user.id, role, email }
+    if (username && String(username).trim()) profilePayload.username = String(username).trim()
+    if (phone && String(phone).trim()) profilePayload.phone = String(phone).trim()
+    if (cpf && String(cpf).trim()) profilePayload.cpf = String(cpf).trim()
+    if (full_name && String(full_name).trim()) profilePayload.full_name = String(full_name).trim()
+    await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' })
 
     // Upsert permissions
     if (permissions) {
-      await supabase.from('admin_permissions').upsert({ user_id: user.id, ...permissions })
+      await supabase.from('admin_permissions').upsert({ user_id: user.id, ...permissions }, { onConflict: 'user_id' })
     }
 
     return new Response(JSON.stringify({ id: user.id, email: user.email }), { status: 200, headers: { 'content-type': 'application/json' } })
@@ -36,3 +47,4 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: e?.message || String(e) }), { status: 500, headers: { 'content-type': 'application/json' } })
   }
 }
+

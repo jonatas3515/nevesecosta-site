@@ -64,8 +64,12 @@ export default function AdminUsuariosPage() {
     try {
       const r = await fetch('/api/admin/users/list')
       const j = await r.json()
+      console.log('[FRONTEND] API response:', j)
+      console.log('[FRONTEND] Total items from API:', j.items?.length || 0)
       // Filter out super admin from list
       const filtered = (j.items || []).filter((u: UserRow) => u.email?.toLowerCase() !== 'jonatascosta.adv@gmail.com')
+      console.log('[FRONTEND] Items after filtering super admin:', filtered.length)
+      console.log('[FRONTEND] Filtered items:', filtered.map((u: UserRow) => u.email))
       setItems(filtered)
     } catch (e) {} finally { setLoading(false) }
   }
@@ -76,6 +80,17 @@ export default function AdminUsuariosPage() {
     e.preventDefault()
     setSaving(true)
     try {
+      // Check if email already exists
+      const checkResponse = await fetch('/api/admin/users/check-email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: createForm.email })
+      })
+      const checkResult = await checkResponse.json()
+      if (checkResult.exists) {
+        show({ title: 'Email já cadastrado', description: `O email ${createForm.email} já está cadastrado. Use outro email ou edite o usuário existente.`, variant: 'error' })
+        return
+      }
       const r = await fetch('/api/admin/users/create', { 
         method: 'POST', 
         headers: { 'content-type': 'application/json' }, 
@@ -112,6 +127,9 @@ export default function AdminUsuariosPage() {
       if (editForm.full_name) payload.full_name = editForm.full_name
       if (editForm.phone) payload.phone = editForm.phone
       if (editForm.cpf) payload.cpf = editForm.cpf
+      
+      console.log('[FRONTEND] Update payload:', payload)
+      console.log('[FRONTEND] editForm.perms:', editForm.perms)
       
       const r = await fetch('/api/admin/users/update', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
       const j = await r.json()

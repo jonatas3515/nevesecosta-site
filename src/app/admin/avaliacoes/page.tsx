@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/toast'
+import { supabase } from '@/lib/supabaseClient'
 
 type Review = {
   id?: string
@@ -16,7 +18,33 @@ export default function AdminAvaliacoesPage() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState<Review>({ name: '', rating: 5, comment: '', comment_date: new Date().toISOString().slice(0,10) })
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null)
+  const router = useRouter()
   const { show } = useToast()
+
+  const checkPerms = async () => {
+    const { data } = await supabase.auth.getSession()
+    const uid = data.session?.user?.id
+    if (!uid) { router.push('/admin/login'); return false }
+    
+    try {
+      const { data: prof } = await supabase.from('profiles').select('role').eq('id', uid).single()
+      const isAdmin = prof?.role === 'admin'
+      const { data: perms } = await supabase.from('admin_permissions').select('*').eq('user_id', uid).maybeSingle()
+      const canReviews = isAdmin || !!perms?.can_reviews
+      
+      if (!canReviews) { 
+        show({ title: 'Acesso negado', description: 'Você não tem permissão para gerenciar avaliações.', variant: 'error' })
+        router.push('/admin')
+        return false 
+      }
+      setHasAccess(true)
+      return true
+    } catch {
+      router.push('/admin')
+      return false
+    }
+  }
 
   const load = async () => {
     setLoading(true)
@@ -26,7 +54,12 @@ export default function AdminAvaliacoesPage() {
       setItems(j.items || [])
     } catch (e) { /* noop */ } finally { setLoading(false) }
   }
-  useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    checkPerms().then(hasAccess => {
+      if (hasAccess) load()
+    })
+  }, [])
 
   const remove = async (id?: string) => {
     if (!id) return
@@ -60,6 +93,14 @@ export default function AdminAvaliacoesPage() {
   const edit = (it: Review) => setForm({ ...it })
 
   const stars = (n: number) => '★★★★★☆☆☆☆☆'.slice(5 - Math.max(1, Math.min(5, n)), 10 - Math.max(1, Math.min(5, n)))
+
+  if (hasAccess === null) {
+    return <div className="text-gray-300">Verificando permissões...</div>
+  }
+
+  if (!hasAccess) {
+    return null
+  }
 
   return (
     <div className="text-gray-100">
