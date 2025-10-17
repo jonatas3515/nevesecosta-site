@@ -8,6 +8,8 @@ import { Calendar, Clock, User, ArrowLeft, MessageCircle, Send } from 'lucide-re
 import { formatDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabaseClient'
 import MarkdownIt from 'markdown-it'
+import JsonLd from '@/components/seo/JsonLd'
+import Canonical from '@/components/seo/Canonical'
 
 interface UiComment {
   id: string
@@ -229,6 +231,56 @@ export default function BlogPostPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Canonical + JSON-LD */}
+      {post && (
+        <>
+          <Canonical />
+          <JsonLd
+            data={{
+              '@context': 'https://schema.org',
+              '@type': 'Article',
+              headline: post.title,
+              description: post.subtitle || undefined,
+              image: post.cover_url || 'https://i.im.ge/2025/10/18/nRo1MP.Logo-transparente.png',
+              author: { '@type': 'Person', name: post.author || 'Equipe Neves & Costa' },
+              publisher: {
+                '@type': 'Organization',
+                name: 'Neves & Costa Advocacia e Consultoria',
+                logo: {
+                  '@type': 'ImageObject',
+                  url: 'https://i.im.ge/2025/10/18/nRo1MP.Logo-transparente.png',
+                },
+              },
+              mainEntityOfPage: {
+                '@type': 'WebPage',
+                '@id': `https://www.nevesecosta.com.br/blog/${post.slug}`,
+              },
+              datePublished: post.published_at || post.created_at,
+              dateModified: post.published_at || post.created_at,
+            }}
+          />
+          <JsonLd
+            data={{
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                {
+                  '@type': 'ListItem',
+                  position: 1,
+                  name: 'Blog',
+                  item: 'https://www.nevesecosta.com.br/blog',
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: post.title,
+                  item: `https://www.nevesecosta.com.br/blog/${post.slug}`,
+                },
+              ],
+            }}
+          />
+        </>
+      )}
       {/* Header */}
       <section className="bg-gradient-to-br from-primary-900 to-primary-700 text-white py-12">
         <div className="container mx-auto px-4">
