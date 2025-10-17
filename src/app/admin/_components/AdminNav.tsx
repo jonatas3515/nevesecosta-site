@@ -14,6 +14,7 @@ const baseLinks = [
   { href: "/admin/produtos", label: "Produtos", key: "can_products" },
   { href: "/admin/avaliacoes", label: "Avaliações", key: "can_reviews" },
   { href: "/admin/usuarios", label: "Usuários", key: "is_admin" },
+  { href: "/admin/configuracoes", label: "Configurações", key: "is_admin" },
 ] as const;
 
 export function AdminNav() {
