@@ -365,6 +365,7 @@ export default function BlogPostPage() {
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
                   className="object-cover"
+                  unoptimized
                   priority
                 />
               )}
@@ -393,6 +394,7 @@ export default function BlogPostPage() {
                           fill
                           sizes="(max-width: 768px) 100vw, 33vw"
                           className="object-cover group-hover:scale-110 transition-transform duration-300"
+                          unoptimized
                         />
                       </div>
                       <h3 className="mt-3 font-semibold text-gray-900 line-clamp-2 group-hover:text-primary-600">{r.title}</h3>
