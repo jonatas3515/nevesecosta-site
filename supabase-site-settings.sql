@@ -17,12 +17,17 @@ create table if not exists public.site_settings (
 alter table public.site_settings enable row level security;
 
 -- Allow anyone to read settings (so the homepage can render the warning)
-create policy if not exists site_settings_select_anon on public.site_settings
-for select using (true);
+drop policy if exists site_settings_select_anon on public.site_settings;
+create policy site_settings_select_anon on public.site_settings
+for select
+to public
+using (true);
 
 -- Allow authenticated users to insert/update (admin UI)
-create policy if not exists site_settings_write_auth on public.site_settings
-for all to authenticated
+drop policy if exists site_settings_write_auth on public.site_settings;
+create policy site_settings_write_auth on public.site_settings
+for all
+to authenticated
 using (true)
 with check (true);
 
