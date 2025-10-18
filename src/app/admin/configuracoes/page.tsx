@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import MarkdownIt from 'markdown-it'
+
+const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
 
 export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true)
@@ -16,6 +19,10 @@ export default function ConfiguracoesPage() {
     video_url: '',
     phone: '',
     email: '',
+    title_align: 'left' as 'left'|'center'|'right',
+    title_size: 'xl' as 'sm'|'md'|'lg'|'xl'|'2xl'|'3xl',
+    title_color: '#111827',
+    body_align: 'left' as 'left'|'center'|'right'|'justify',
   })
   const [current, setCurrent] = useState<typeof form | null>(null)
 
@@ -38,6 +45,10 @@ export default function ConfiguracoesPage() {
             video_url: data.video_url || '',
             phone: data.phone || '',
             email: data.email || '',
+            title_align: (data.title_align as any) || 'left',
+            title_size: (data.title_size as any) || 'xl',
+            title_color: data.title_color || '#111827',
+            body_align: (data.body_align as any) || 'left',
           })
           setCurrent({
             warning_enabled: !!data.warning_enabled,
@@ -47,6 +58,10 @@ export default function ConfiguracoesPage() {
             video_url: data.video_url || '',
             phone: data.phone || '',
             email: data.email || '',
+            title_align: (data.title_align as any) || 'left',
+            title_size: (data.title_size as any) || 'xl',
+            title_color: data.title_color || '#111827',
+            body_align: (data.body_align as any) || 'left',
           })
         }
       } finally { if (mounted) setLoading(false) }
@@ -117,6 +132,44 @@ function PreviewOverlay({ data, onClose }: { data: { warning_enabled: boolean; w
                     className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-gray-100"
                   />
                 </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-1">Alinhamento do título</label>
+                    <select
+                      value={form.title_align}
+                      onChange={(e)=>setForm({...form, title_align: e.target.value as any})}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-gray-100"
+                    >
+                      <option value="left">Esquerda</option>
+                      <option value="center">Centro</option>
+                      <option value="right">Direita</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-1">Tamanho do título</label>
+                    <select
+                      value={form.title_size}
+                      onChange={(e)=>setForm({...form, title_size: e.target.value as any})}
+                      className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-gray-100"
+                    >
+                      <option value="sm">Pequeno</option>
+                      <option value="md">Médio</option>
+                      <option value="lg">Grande</option>
+                      <option value="xl">XL</option>
+                      <option value="2xl">2XL</option>
+                      <option value="3xl">3XL</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-1">Cor do título</label>
+                    <input
+                      type="color"
+                      value={form.title_color}
+                      onChange={(e)=>setForm({...form, title_color: e.target.value})}
+                      className="w-full h-10 bg-gray-800 border border-gray-700 rounded-md"
+                    />
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm text-gray-300 mb-1">Mensagem</label>
                   <textarea
@@ -125,6 +178,20 @@ function PreviewOverlay({ data, onClose }: { data: { warning_enabled: boolean; w
                     rows={5}
                     className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-gray-100"
                   />
+                  <p className="text-xs text-gray-400 mt-1">Dicas: **negrito**, *itálico*, [link](https://exemplo.com). Use Markdown. Alinhamento do corpo abaixo.</p>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-300 mb-1">Alinhamento do corpo</label>
+                  <select
+                    value={form.body_align}
+                    onChange={(e)=>setForm({...form, body_align: e.target.value as any})}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-gray-100"
+                  >
+                    <option value="left">Esquerda</option>
+                    <option value="center">Centro</option>
+                    <option value="right">Direita</option>
+                    <option value="justify">Justificado</option>
+                  </select>
                 </div>
               </>
             ) : (
@@ -229,15 +296,20 @@ function PreviewOverlay({ data, onClose }: { data: { warning_enabled: boolean; w
   )
 }
 
-function PreviewCard({ data }: { data: { warning_enabled: boolean; warning_title: string; warning_body: string; warning_type: 'text'|'video'; video_url?: string; phone?: string; email?: string } }) {
+function PreviewCard({ data }: { data: { warning_enabled: boolean; warning_title: string; warning_body: string; warning_type: 'text'|'video'; video_url?: string; phone?: string; email?: string; title_align?: 'left'|'center'|'right'; title_size?: 'sm'|'md'|'lg'|'xl'|'2xl'|'3xl'; title_color?: string; body_align?: 'left'|'center'|'right'|'justify' } }) {
   const title = data.warning_title || 'Atenção!'
   const body = data.warning_body || ''
   const phone = data.phone || '(73) 99934-8552'
   const email = data.email || 'contato@nevesecosta.com.br'
   const isVideo = data.warning_type === 'video' && !!data.video_url
+  const titleAlign = data.title_align || 'left'
+  const titleSize = data.title_size || 'xl'
+  const titleColor = data.title_color || '#111827'
+  const bodyAlign = data.body_align || 'left'
+  const titleClass = sizeToClass(titleSize)
   return (
     <div className="bg-white rounded-xl p-5 text-gray-900">
-      <h4 className="text-lg font-bold mb-3">{title}</h4>
+      <h4 className={`${titleClass} font-bold mb-3`} style={{ color: titleColor, textAlign: titleAlign as any }}>{title}</h4>
       {isVideo ? (
         <div className="mb-4">
           {/youtube\.com|youtu\.be/i.test(data.video_url || '') ? (
@@ -254,7 +326,11 @@ function PreviewCard({ data }: { data: { warning_enabled: boolean; warning_title
           )}
         </div>
       ) : (
-        <p className="mb-4 leading-relaxed">{body}</p>
+        <div
+          className="mb-4 leading-relaxed"
+          style={{ textAlign: bodyAlign as any }}
+          dangerouslySetInnerHTML={{ __html: md.render(body) }}
+        />
       )}
       <div className="bg-blue-50 p-3 rounded">
         <div className="flex items-center gap-2"><span className="font-semibold">📞 Telefone:</span><span className="font-bold">{phone}</span></div>
@@ -277,4 +353,16 @@ function toYouTubeEmbed(url: string) {
     }
   } catch {}
   return url
+}
+
+function sizeToClass(size: 'sm'|'md'|'lg'|'xl'|'2xl'|'3xl') {
+  switch (size) {
+    case 'sm': return 'text-lg'
+    case 'md': return 'text-xl'
+    case 'lg': return 'text-2xl'
+    case 'xl': return 'text-3xl'
+    case '2xl': return 'text-4xl'
+    case '3xl': return 'text-5xl'
+    default: return 'text-xl'
+  }
 }

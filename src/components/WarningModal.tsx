@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
+import MarkdownIt from 'markdown-it'
+
+const md = new MarkdownIt({
+  html: false,
+  linkify: true,
+  breaks: true,
+})
 
 export default function WarningModal() {
   const [showModal, setShowModal] = useState(false)
@@ -15,6 +22,10 @@ export default function WarningModal() {
     video_url?: string
     phone?: string
     email?: string
+    title_align?: 'left'|'center'|'right'
+    title_size?: 'sm'|'md'|'lg'|'xl'|'2xl'|'3xl'
+    title_color?: string
+    body_align?: 'left'|'center'|'right'|'justify'
   } | null>(null)
 
   useEffect(() => {
@@ -23,7 +34,7 @@ export default function WarningModal() {
       try {
         const { data } = await supabase
           .from('site_settings')
-          .select('warning_enabled, warning_title, warning_body, warning_type, video_url, phone, email')
+          .select('warning_enabled, warning_title, warning_body, warning_type, video_url, phone, email, title_align, title_size, title_color, body_align')
           .eq('id', 'default')
           .maybeSingle()
         if (!mounted) return
@@ -48,6 +59,11 @@ export default function WarningModal() {
   const phone = settings.phone || '(73) 99934-8552'
   const email = settings.email || 'contato@nevesecosta.com.br'
   const isVideo = settings.warning_type === 'video' && !!settings.video_url
+  const titleAlign = settings.title_align || 'left'
+  const titleSize = settings.title_size || 'xl'
+  const titleColor = settings.title_color || '#111827'
+  const bodyAlign = settings.body_align || 'left'
+  const titleClass = sizeToClass(titleSize)
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -66,7 +82,12 @@ export default function WarningModal() {
             </div>
           </div>
           
-          <h3 className="text-xl font-bold text-gray-900 mb-4">{title}</h3>
+          <h3
+            className={`${titleClass} font-bold mb-4`}
+            style={{ color: titleColor, textAlign: titleAlign as any }}
+          >
+            {title}
+          </h3>
           
           {isVideo ? (
             <div className="mb-6">
@@ -85,7 +106,11 @@ export default function WarningModal() {
               )}
             </div>
           ) : (
-            <p className="text-gray-700 mb-6 leading-relaxed text-left">{body}</p>
+            <div
+              className="text-gray-700 mb-6 leading-relaxed"
+              style={{ textAlign: bodyAlign as any }}
+              dangerouslySetInnerHTML={{ __html: md.render(body) }}
+            />
           )}
           
           <div className="bg-blue-50 p-4 rounded-lg mb-6">
@@ -124,4 +149,16 @@ function toYouTubeEmbed(url: string) {
     }
   } catch {}
   return url
+}
+
+function sizeToClass(size: 'sm'|'md'|'lg'|'xl'|'2xl'|'3xl') {
+  switch (size) {
+    case 'sm': return 'text-lg'
+    case 'md': return 'text-xl'
+    case 'lg': return 'text-2xl'
+    case 'xl': return 'text-3xl'
+    case '2xl': return 'text-4xl'
+    case '3xl': return 'text-5xl'
+    default: return 'text-xl'
+  }
 }
