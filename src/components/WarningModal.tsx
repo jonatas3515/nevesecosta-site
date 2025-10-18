@@ -67,7 +67,7 @@ export default function WarningModal() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl relative">
+      <div className="bg-white rounded-2xl p-6 md:p-8 w-full max-w-xl md:max-w-2xl lg:max-w-3xl mx-4 shadow-2xl relative">
         <button
           onClick={() => setShowModal(false)}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
@@ -107,7 +107,7 @@ export default function WarningModal() {
             </div>
           ) : (
             <div
-              className="text-gray-700 mb-6 leading-relaxed"
+              className="text-gray-700 mb-6 leading-relaxed space-y-4 [&_a]:text-blue-600 [&_a:hover]:underline [&_strong]:font-semibold"
               style={{ textAlign: bodyAlign as any }}
               dangerouslySetInnerHTML={{ __html: md.render(body) }}
             />
