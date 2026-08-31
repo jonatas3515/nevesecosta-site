@@ -3,139 +3,11 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient'
+import { googleReviews, type GoogleReview } from '@/data/googleReviews'
 
-interface Review {
-  id: number
-  name: string
-  role: string
-  rating: number
-  comment: string
-  date: string
-}
-
-// Avaliações reais do Google
-const googleReviews: Review[] = [
-  {
-    id: 1,
-    name: "Edmario Ramos Pedreira",
-    role: "Cliente Google",
-    rating: 5,
-    comment: "Excelente atendimento e profissionalismo. Recomendo!",
-    date: "2024-07-15"
-  },
-  {
-    id: 2,
-    name: "Gilvan Santana",
-    role: "Cliente Google",
-    rating: 5,
-    comment: "Atendimento excepcional, muito satisfeito com o resultado.",
-    date: "2024-06-20"
-  },
-  {
-    id: 3,
-    name: "Rogerio Araujo Costa",
-    role: "Local Guide • 18 avaliações",
-    rating: 5,
-    comment: "Já me ajudou algumas vezes, sempre com muita paciência e competência. Sem dúvida é o melhor de Itamaraju e extremo sul da Bahia.",
-    date: "2024-06-20"
-  },
-  {
-    id: 4,
-    name: "Daniella Silva",
-    role: "Cliente Google",
-    rating: 5,
-    comment: "A atenção aos detalhes, a agilidade nas respostas e o comprometimento com os resultados superaram minhas expectativas. Sem dúvida, é um escritório que preza pela ética, excelência e respeito ao cliente.",
-    date: "2024-05-25"
-  },
-  {
-    id: 5,
-    name: "Luane Salles",
-    role: "Cliente Google",
-    rating: 5,
-    comment: "Atencioso e presente em todos os questionamentos, um profissional excelente.",
-    date: "2024-05-25"
-  },
-  {
-    id: 6,
-    name: "Guda Dias",
-    role: "Cliente Google",
-    rating: 5,
-    comment: "Excelente atendimento e dedicação aos clientes.",
-    date: "2024-05-25"
-  },
-  {
-    id: 7,
-    name: "Mateus Torres",
-    role: "Cliente Google",
-    rating: 5,
-    comment: "Parabéns ao escritório pelo excelente trabalho! Profissionalismo, dedicação e compromisso com os clientes são qualidades que fazem toda a diferença. Continuem sendo referência em advocacia e justiça! Recomendo 👍 👍",
-    date: "2024-05-25"
-  },
-  {
-    id: 8,
-    name: "Amanda Santos",
-    role: "Cliente Google",
-    rating: 5,
-    comment: "Atendimento excepcional e resultados satisfatórios.",
-    date: "2024-05-25"
-  },
-  {
-    id: 9,
-    name: "Nathan Falcão",
-    role: "Cliente Google",
-    rating: 5,
-    comment: "São ótimos advogados, bom atendimento, prestativos, compreensivo, sem dúvida nenhuma se eu precisar são eles que vou procurar sempre",
-    date: "2024-05-25"
-  },
-  {
-    id: 10,
-    name: "Isnaldo Souza",
-    role: "Cliente Google",
-    rating: 5,
-    comment: "Excelente escritório de advocacia, recomendo!",
-    date: "2024-05-25"
-  },
-  {
-    id: 11,
-    name: "Edcarlos Santos",
-    role: "Local Guide • 12 avaliações",
-    rating: 5,
-    comment: "Ótimo atendimento, recomendo",
-    date: "2024-05-25"
-  },
-  {
-    id: 12,
-    name: "Leonardo Santos",
-    role: "Local Guide • 7 avaliações",
-    rating: 5,
-    comment: "Ótimo atendimento, e mantém o cliente sempre informado sobre o processo. Indico.",
-    date: "2024-05-25"
-  },
-  {
-    id: 13,
-    name: "Italio NeVveS",
-    role: "Cliente Google",
-    rating: 5,
-    comment: "Excelente escritório! Atendimento rápido, equipe atenciosa e que realmente resolve. Fiquei muito satisfeito com o serviço e recomendo.",
-    date: "2024-05-25"
-  },
-  {
-    id: 14,
-    name: "Danilo Costa",
-    role: "Local Guide • 17 avaliações",
-    rating: 5,
-    comment: "Já precisei dos serviços da Neves & Costa Advocacia algumas vezes e sempre fui muito bem atendido. O Jonatas, em especial, é extremamente atencioso, profissional e dedicado, sempre esclarecendo todas as dúvidas e conduzindo os processos com agilidade e transparência. Recomendo fortemente o escritório para quem busca um atendimento de qualidade e confiança.",
-    date: "2024-05-25"
-  },
-  {
-    id: 15,
-    name: "Uanatas Costa",
-    role: "Cliente Google",
-    rating: 5,
-    comment: "Advogados bem empenhados em resolução de problemas. Parabéns a todos",
-    date: "2024-05-25"
-  }
-]
+// Alias para manter compatibilidade
+type Review = GoogleReview
 
 const initialReviews: Review[] = [...googleReviews]
 
@@ -155,11 +27,6 @@ export default function Reviews() {
   useEffect(() => {
     const loadReviews = async () => {
       try {
-        const { createClient } = await import('@supabase/supabase-js')
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-        )
         const { data } = await supabase.from('reviews').select('*').order('comment_date', { ascending: false })
         if (data && data.length > 0) {
           const dbReviews = data.map((r: any, idx: number) => ({
@@ -211,12 +78,12 @@ export default function Reviews() {
   const averageRating = allReviews.reduce((acc, review) => acc + review.rating, 0) / allReviews.length
 
   return (
-    <section id="avaliacoes" className="py-20 bg-black">
+    <section id="avaliacoes" className="py-20 bg-black" aria-labelledby="avaliacoes-title">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 id="avaliacoes-title" className="text-4xl md:text-5xl font-bold text-white mb-4">
               O Que Nossos Clientes Dizem
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-6">
@@ -285,7 +152,7 @@ export default function Reviews() {
                             <p className="font-semibold text-white text-lg">{review.name}</p>
                             <p className="text-gray-400 text-sm">{review.role}</p>
                             <p className="text-gray-500 text-xs mt-1">
-                              {new Date(review.date).toLocaleDateString('pt-BR')}
+                              {new Date(review.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                             </p>
                           </div>
                         </div>
@@ -298,18 +165,20 @@ export default function Reviews() {
                 <button
                   onClick={prevReview}
                   className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gold-500 text-gray-900 p-2 rounded-full hover:bg-gold-600 transition-colors"
+                  aria-label="Avaliação anterior"
                 >
-                  <ChevronLeft size={20} />
+                  <ChevronLeft size={20} aria-hidden="true" />
                 </button>
                 <button
                   onClick={nextReview}
                   className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gold-500 text-gray-900 p-2 rounded-full hover:bg-gold-600 transition-colors"
+                  aria-label="Próxima avaliação"
                 >
-                  <ChevronRight size={20} />
+                  <ChevronRight size={20} aria-hidden="true" />
                 </button>
                 
                 {/* Indicadores */}
-                <div className="flex justify-center mt-6 space-x-2">
+                <div className="flex justify-center mt-6 space-x-2" role="tablist" aria-label="Navegação de avaliações">
                   {allReviews.map((_, index) => (
                     <button
                       key={index}
@@ -317,6 +186,9 @@ export default function Reviews() {
                       className={`w-3 h-3 rounded-full transition-colors ${
                         index === currentIndex ? 'bg-gold-500' : 'bg-gray-600'
                       }`}
+                      aria-label={`Ir para avaliação ${index + 1}`}
+                      aria-selected={index === currentIndex}
+                      role="tab"
                     />
                   ))}
                 </div>
