@@ -329,7 +329,7 @@ export default function CalculadoraRescisoria() {
           <div class="title">CÁLCULO DE RESCISÃO TRABALHISTA</div>
           <div class="contact">
             <strong>NEVES & COSTA ADVOCACIA</strong><br>
-            Email: contato@nevesecosta.com.br | Telefone: (73) 99934-8552
+            Email: contato@nevesecosta.com.br | Telefone: (73) 9122-5215
           </div>
         </div>
 
@@ -474,7 +474,7 @@ export default function CalculadoraRescisoria() {
       `Olá! Fiz um cálculo de rescisão no site de vocês para ${resultado.nomeFuncionario} e gostaria de uma consulta jurídica. O valor calculado foi ${formatCurrency(resultado.total)}.` :
       'Olá! Gostaria de uma consulta jurídica sobre rescisão trabalhista.'
     
-    const url = `https://wa.me/5573999348552?text=${encodeURIComponent(mensagem)}`
+    const url = `https://wa.me/557391225215?text=${encodeURIComponent(mensagem)}`
     window.open(url, '_blank')
   }
 

@@ -261,7 +261,7 @@ export default function PedidosPage() {
           <div class="logo">NEVES & COSTA ADVOCACIA</div>
           <div class="contact">
             <strong>NEVES & COSTA ADVOCACIA</strong><br>
-            Email: contato@nevesecosta.com.br | Telefone: (73) 99934-8552
+            Email: contato@nevesecosta.com.br | Telefone: (73) 9122-5215
           </div>
         </div>
 
