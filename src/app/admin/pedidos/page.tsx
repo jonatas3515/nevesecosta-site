@@ -1,3 +1,18 @@
+/**
+ * ATENÇÃO: ARQUIVO CRÍTICO - GESTÃO DE PEDIDOS
+ * 
+ * Este arquivo gerencia:
+ * - Listagem de pedidos/pagamentos (integração Stripe)
+ * - Exibição de status de transações
+ * - Dados financeiros sensíveis
+ * 
+ * NÃO refatorar sem:
+ * 1. Validação de que todos os campos de pedido são preservados
+ * 2. Testes em staging com pedidos reais
+ * 
+ * A função formatCurrency local NÃO deve ser migrada para @/utils
+ * sem validação completa do contexto de exibição financeira.
+ */
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -261,7 +276,7 @@ export default function PedidosPage() {
           <div class="logo">NEVES & COSTA ADVOCACIA</div>
           <div class="contact">
             <strong>NEVES & COSTA ADVOCACIA</strong><br>
-            Email: contato@nevesecosta.com.br | Telefone: (73) 99934-8552
+            Email: contato@nevesecosta.com.br | Telefone: (73) 9122-5215
           </div>
         </div>
 
