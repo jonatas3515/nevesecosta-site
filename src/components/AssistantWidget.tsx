@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { X, Bot, Send, Loader2, MessageCircle, Paperclip, Mic } from 'lucide-react'
-import { useSpeechRecognition } from 'react-speech-kit'
+// import { useSpeechRecognition } from 'react-speech-kit'
 import { supabase } from '@/lib/supabaseClient'
 import type { ChatMessage, LeadData, ChatApiResponse } from '@/types/assistantTypes'
 
@@ -39,10 +39,12 @@ export default function AssistantWidget() {
   const endRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Speech recognition
-  const { listen, stop } = useSpeechRecognition({
-    onResult: (text: any) => setInputValue(String(text || '')),
-  })
+  // Speech recognition (temporarily disabled)
+  // const { listen, stop } = useSpeechRecognition({
+  //   onResult: (text: any) => setInputValue(String(text || '')),
+  // })
+  const listen = (_opts?: any) => {}
+  const stop = () => {}
   const [isListening, setIsListening] = useState(false)
 
   // Scroll
