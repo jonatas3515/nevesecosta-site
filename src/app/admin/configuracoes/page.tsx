@@ -299,7 +299,7 @@ function PreviewOverlay({ data, onClose }: { data: { warning_enabled: boolean; w
 function PreviewCard({ data }: { data: { warning_enabled: boolean; warning_title: string; warning_body: string; warning_type: 'text'|'video'; video_url?: string; phone?: string; email?: string; title_align?: 'left'|'center'|'right'; title_size?: 'sm'|'md'|'lg'|'xl'|'2xl'|'3xl'; title_color?: string; body_align?: 'left'|'center'|'right'|'justify' } }) {
   const title = data.warning_title || 'Atenção!'
   const body = data.warning_body || ''
-  const phone = data.phone || '(73) 99934-8552'
+  const phone = data.phone || '(73) 9122-5215'
   const email = data.email || 'contato@nevesecosta.com.br'
   const isVideo = data.warning_type === 'video' && !!data.video_url
   const titleAlign = data.title_align || 'left'

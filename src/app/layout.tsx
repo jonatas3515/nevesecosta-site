@@ -69,9 +69,7 @@ export default function RootLayout({
             image: 'https://i.im.ge/2025/09/28/nmeA40.Rua-Pesidente-Kennedy-n-72-A-centro.jpeg',
             sameAs: ['https://instagram.com/neves.e.costa'],
             contactPoint: [
-              { '@type': 'ContactPoint', telephone: '+55-73-99934-8552', contactType: 'customer service', areaServed: 'BR' },
-              { '@type': 'ContactPoint', telephone: '+55-73-98862-0915', contactType: 'customer service', areaServed: 'BR' },
-              { '@type': 'ContactPoint', telephone: '+55-73-99122-5215', contactType: 'customer service', areaServed: 'BR' },
+              { '@type': 'ContactPoint', telephone: '+55-73-9122-5215', contactType: 'customer service', areaServed: 'BR' },
             ],
             address: [
               {

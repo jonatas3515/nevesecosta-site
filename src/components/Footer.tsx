@@ -103,8 +103,7 @@ export default function Footer() {
               <li className="flex items-center space-x-3">
                 <Phone size={20} className="text-gold-500 flex-shrink-0" />
                 <div className="text-gray-400">
-                  <div>(73) 99934-8552</div>
-                  <div>(73) 98862-0915</div>
+                  <div>(73) 9122-5215</div>
                 </div>
               </li>
               <li className="flex items-start space-x-3">

@@ -56,7 +56,7 @@ export default function WarningModal() {
   if (loading || !settings?.warning_enabled || !showModal) return null
   const title = settings.warning_title || 'Atenção!'
   const body = settings.warning_body || ''
-  const phone = settings.phone || '(73) 99934-8552'
+  const phone = settings.phone || '(73) 9122-5215'
   const email = settings.email || 'contato@nevesecosta.com.br'
   const isVideo = settings.warning_type === 'video' && !!settings.video_url
   const titleAlign = settings.title_align || 'left'

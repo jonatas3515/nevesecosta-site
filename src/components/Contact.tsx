@@ -62,7 +62,7 @@ Olá! Vim do site e gostaria de falar sobre:
 ${formData.message}
       `.trim()
       
-      const whatsappUrl = `https://wa.me/5573999348552?text=${encodeURIComponent(whatsappMessage)}`
+      const whatsappUrl = `https://wa.me/557391225215?text=${encodeURIComponent(whatsappMessage)}`
       window.open(whatsappUrl, '_blank')
       
       setSubmitted(true)
@@ -116,8 +116,7 @@ ${formData.message}
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Telefone / WhatsApp</h4>
                     <p className="text-gray-600">
-                      (73) 99934-8552<br />
-                      (73) 98862-0915
+                      (73) 9122-5215
                     </p>
                   </div>
                 </div>

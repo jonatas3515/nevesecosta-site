@@ -39,7 +39,7 @@ values (
   'Atenção!',
   'Exemplo de aviso ao usuário. Personalize este texto no painel do administrador.',
   'text',
-  '(73) 99934-8552',
+  '(73) 9122-5215',
   'contato@nevesecosta.com.br'
 )
 on conflict (id) do nothing;
