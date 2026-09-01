@@ -13,7 +13,7 @@ function generatePdfBuffer(calc: any): Promise<Buffer> {
     // Header
     doc.fontSize(18).fillColor('#1e40af').text('NEVES & COSTA ADVOCACIA', { align: 'center' })
     doc.moveDown(0.2)
-    doc.fontSize(10).fillColor('#000').text('Email: contato@nevesecosta.com.br | Telefone: (73) 9122-5215', { align: 'center' })
+    doc.fontSize(10).fillColor('#000').text('Email: contato@nevesecosta.com.br | Telefone: (73) 99934-8552', { align: 'center' })
     doc.moveDown()
 
     doc.fontSize(14).fillColor('#1e40af').text('Cálculo de Rescisão', { align: 'left' })

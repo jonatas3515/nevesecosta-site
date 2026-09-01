@@ -1,19 +1,3 @@
-/**
- * ATENÇÃO: ARQUIVO CRÍTICO
- * 
- * Este arquivo contém lógica sensível de:
- * - Cálculo de rescisão trabalhista (INSS, FGTS, férias, 13º, etc.)
- * - Integração com pagamento (Stripe)
- * - Geração de PDF com dados do cálculo
- * 
- * NÃO refatorar sem:
- * 1. Testes automatizados cobrindo todos os cenários de cálculo
- * 2. Ambiente de staging para validação
- * 3. Revisão manual dos valores gerados
- * 
- * Funções locais (formatCurrency, calcularINSS) NÃO devem ser migradas
- * para @/utils sem validação completa da cadeia de geração de PDF.
- */
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -31,8 +15,7 @@ export default function CalculadoraRescisoria() {
     filhosMenores14: '0',
     motivoSaida: 'demissaoSemJustaCausa',
     trabalhouAvisoPrevio: false,
-    feriasVencidas: false,
-    decimoTerceiroVencido: false
+    feriasVencidas: false
   })
 
   const [resultado, setResultado] = useState<any>(null)
@@ -43,7 +26,6 @@ export default function CalculadoraRescisoria() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [productPrice, setProductPrice] = useState(7500)
   const [productPromoPrice, setProductPromoPrice] = useState<number | null>(null)
-  const [calcSettings, setCalcSettings] = useState<any>(null)
 
   useEffect(() => {
     let mounted = true
@@ -119,19 +101,9 @@ export default function CalculadoraRescisoria() {
       } catch {}
     }
 
-    const loadSettings = async () => {
-      try {
-        const { data } = await supabase.from('calculator_settings').select('*').eq('id', 1).single()
-        if (mounted && data) {
-          setCalcSettings(data)
-        }
-      } catch {}
-    }
-
     checkAdmin()
     checkPayment()
     loadProductPrice()
-    loadSettings()
     
     return () => {
       mounted = false
@@ -170,171 +142,65 @@ export default function CalculadoraRescisoria() {
       saldoSalario: saldoSalario,
       avisoPrevio: 0,
       decimoTerceiro: 0,
-      decimoTerceiroVencido: 0,
       ferias: 0,
       fgts: 0,
       multaFgts: 0,
       salarioFamilia: 0,
       descontoINSS: 0,
-      descontoIRRF: 0,
       total: 0
     }
 
-    // Função auxiliar para calcular avos de direito (respeitando fração >= 15 dias no mês)
-    const calcularAvos = (inicio: Date, fim: Date) => {
-      let avos = 0;
-      let d = new Date(inicio.getFullYear(), inicio.getMonth(), 1);
-      const end = new Date(fim.getFullYear(), fim.getMonth(), 1);
-      
-      while (d <= end) {
-        let startDay = 1;
-        let endDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-        
-        if (d.getFullYear() === inicio.getFullYear() && d.getMonth() === inicio.getMonth()) {
-           startDay = inicio.getDate();
-        }
-        if (d.getFullYear() === fim.getFullYear() && d.getMonth() === fim.getMonth()) {
-           endDay = fim.getDate();
-        }
-        
-        let daysInMonth = endDay - startDay + 1;
-        if (daysInMonth >= 15) {
-           avos++;
-        }
-        d.setMonth(d.getMonth() + 1);
-      }
-      return avos;
-    };
-
     // Aviso Prévio: 30 dias + 3 dias por ano completo
-    let projecaoAviso = 0;
     if (!formData.trabalhouAvisoPrevio && formData.motivoSaida === 'demissaoSemJustaCausa') {
-      projecaoAviso = 30 + (anos * 3);
-      calculo.avisoPrevio = (salario / 30) * projecaoAviso;
+      const diasAvisoPrevio = 30 + (anos * 3)
+      calculo.avisoPrevio = (salario / 30) * diasAvisoPrevio
     }
 
-    const dataDemProjetada = new Date(dataDem);
-    // Para resolver problemas de UTC, usa a mesma base local
-    dataDemProjetada.setDate(dataDemProjetada.getDate() + projecaoAviso);
-
-    // 13º Salário Proporcional (Ano calendário)
+    // 13º Salário Proporcional
     if (formData.motivoSaida !== 'demissaoComJustaCausa') {
-      const inicioAno = new Date(dataDemProjetada.getFullYear(), 0, 1);
-      const inicioCalculo13 = dataAdm > inicioAno ? dataAdm : inicioAno;
-      let avos13 = calcularAvos(inicioCalculo13, dataDemProjetada);
-      if (avos13 > 12) avos13 = 12;
-      calculo.decimoTerceiro = (salario / 12) * avos13;
+      calculo.decimoTerceiro = (salario / 12) * mesesRestantes
     }
 
-    // 13º Salário Vencido
-    if (formData.decimoTerceiroVencido) {
-      calculo.decimoTerceiroVencido = salario;
-    }
-
-    // Férias Proporcionais + 1/3 (Período aquisitivo)
+    // Férias Proporcionais + 1/3
     if (formData.motivoSaida !== 'demissaoComJustaCausa') {
-      const dataInicioAquisitivo = new Date(dataAdm);
-      dataInicioAquisitivo.setFullYear(dataInicioAquisitivo.getFullYear() + anos);
-      let avosFerias = calcularAvos(dataInicioAquisitivo, dataDemProjetada);
-      if (avosFerias > 12) avosFerias = 12;
-      const feriasProporcionais = (salario / 12) * avosFerias;
-      calculo.ferias = feriasProporcionais + (feriasProporcionais / 3);
+      const feriasProporcionais = (salario / 12) * mesesRestantes
+      const umTercoFerias = feriasProporcionais / 3
+      calculo.ferias = feriasProporcionais + umTercoFerias
     }
 
     // Férias Vencidas + 1/3
     if (formData.feriasVencidas) {
-      const feriasVencidas = salario;
-      const umTercoVencidas = salario / 3;
-      calculo.ferias += feriasVencidas + umTercoVencidas;
-    }
-
-    // Pega as configurações do banco ou usa os defaults de 2026
-    const s = calcSettings || {
-      salario_minimo: 1621.00,
-      salario_familia: 67.54,
-      teto_inss: 8475.55,
-      inss_faixa1_limite: 1621.00,
-      inss_faixa1_aliquota: 0.075,
-      inss_faixa2_limite: 2902.84,
-      inss_faixa2_aliquota: 0.09,
-      inss_faixa3_limite: 4354.27,
-      inss_faixa3_aliquota: 0.12,
-      inss_faixa4_limite: 8475.55,
-      inss_faixa4_aliquota: 0.14,
-      irrf_deducao_dependente: 189.59,
-      irrf_desconto_simplificado: 564.80,
-      irrf_faixa1_limite: 2259.20,
-      irrf_faixa2_limite: 2826.65,
-      irrf_faixa2_aliquota: 0.075,
-      irrf_faixa2_deducao: 169.44,
-      irrf_faixa3_limite: 3751.05,
-      irrf_faixa3_aliquota: 0.15,
-      irrf_faixa3_deducao: 381.44,
-      irrf_faixa4_limite: 4664.68,
-      irrf_faixa4_aliquota: 0.225,
-      irrf_faixa4_deducao: 662.77,
-      irrf_faixa5_aliquota: 0.275,
-      irrf_faixa5_deducao: 896.00,
+      const feriasVencidas = salario
+      const umTercoVencidas = salario / 3
+      calculo.ferias += feriasVencidas + umTercoVencidas
     }
 
     // Salário Família (do dia 1 até o último dia trabalhado do mês)
     if (filhos > 0) {
-      calculo.salarioFamilia = (s.salario_familia / 30) * diasUltimoMes * filhos;
+      const valorSalarioFamilia = 65.00 // Valor 2025
+      calculo.salarioFamilia = (valorSalarioFamilia / 30) * diasUltimoMes * filhos
     }
 
-    // Tabela INSS dinâmica
-    const calcularINSS2026 = (base: number) => {
-      let inss = 0;
-      if (base > s.teto_inss) base = s.teto_inss;
-      if (base > s.inss_faixa3_limite) {
-        inss += (base - s.inss_faixa3_limite) * s.inss_faixa4_aliquota;
-        base = s.inss_faixa3_limite;
+    // Calcular INSS sobre saldo de salário + décimo terceiro + salário família
+    const calcularINSS = (baseCalculo: number) => {
+      // Tabela INSS 2025
+      if (baseCalculo <= 1518.00) {
+        return baseCalculo * 0.075
+      } else if (baseCalculo <= 2793.88) {
+        return (1518.00 * 0.075) + ((baseCalculo - 1518.00) * 0.09)
+      } else if (baseCalculo <= 4190.83) {
+        return (1518.00 * 0.075) + ((2793.88 - 1518.00) * 0.09) + ((baseCalculo - 2793.88) * 0.12)
+      } else if (baseCalculo <= 8157.41) {
+        return (1518.00 * 0.075) + ((2793.88 - 1518.00) * 0.09) + ((4190.83 - 2793.88) * 0.12) + ((baseCalculo - 4190.83) * 0.14)
+      } else {
+        return (1518.00 * 0.075) + ((2793.88 - 1518.00) * 0.09) + ((4190.83 - 2793.88) * 0.12) + ((8157.41 - 4190.83) * 0.14)
       }
-      if (base > s.inss_faixa2_limite) {
-        inss += (base - s.inss_faixa2_limite) * s.inss_faixa3_aliquota;
-        base = s.inss_faixa2_limite;
-      }
-      if (base > s.inss_faixa1_limite) {
-        inss += (base - s.inss_faixa1_limite) * s.inss_faixa2_aliquota;
-        base = s.inss_faixa1_limite;
-      }
-      if (base > 0) {
-        inss += base * s.inss_faixa1_aliquota;
-      }
-      return inss;
-    };
+    }
 
-    // Tabela IRRF dinâmica
-    const calcularIRRF = (base: number, dependentes: number) => {
-      const deducaoDependentes = dependentes * s.irrf_deducao_dependente;
-      const baseComDeducao = base - deducaoDependentes;
-      const baseSimplificada = base - s.irrf_desconto_simplificado;
-      const baseFinal = Math.min(baseComDeducao, baseSimplificada);
-
-      if (baseFinal <= s.irrf_faixa1_limite) return 0;
-      if (baseFinal <= s.irrf_faixa2_limite) return (baseFinal * s.irrf_faixa2_aliquota) - s.irrf_faixa2_deducao;
-      if (baseFinal <= s.irrf_faixa3_limite) return (baseFinal * s.irrf_faixa3_aliquota) - s.irrf_faixa3_deducao;
-      if (baseFinal <= s.irrf_faixa4_limite) return (baseFinal * s.irrf_faixa4_aliquota) - s.irrf_faixa4_deducao;
-      return (baseFinal * s.irrf_faixa5_aliquota) - s.irrf_faixa5_deducao;
-    };
-
-    // INSS e IRRF são calculados separadamente (Salário x 13º)
-    const baseInssSalario = calculo.saldoSalario; // Salário Família e Aviso Indenizado não sofrem INSS.
-    const inssSalario = calcularINSS2026(baseInssSalario);
-    
-    const baseInss13 = calculo.decimoTerceiro + (calculo.decimoTerceiroVencido || 0);
-    const inss13 = calcularINSS2026(baseInss13);
-    
-    calculo.descontoINSS = inssSalario + inss13;
-
-    // Férias indenizadas e Aviso Indenizado não sofrem IRRF na rescisão
-    const baseIrrfSalario = baseInssSalario - inssSalario;
-    const irrfSalario = calcularIRRF(baseIrrfSalario, filhos);
-    
-    const baseIrrf13 = baseInss13 - inss13;
-    const irrf13 = calcularIRRF(baseIrrf13, filhos);
-
-    calculo.descontoIRRF = (irrfSalario > 0 ? irrfSalario : 0) + (irrf13 > 0 ? irrf13 : 0);
+    // Base de cálculo do INSS: saldo de salário + décimo terceiro + salário família
+    const baseCalculoINSS = calculo.saldoSalario + calculo.decimoTerceiro + calculo.salarioFamilia
+    const descontoINSS = calcularINSS(baseCalculoINSS)
+    calculo.descontoINSS = descontoINSS
 
     // FGTS (8% sobre remunerações + aviso prévio quando aplicável)
     let totalRemuneracoesFGTS = salario * meses
@@ -361,11 +227,11 @@ export default function CalculadoraRescisoria() {
       calculo.multaFgts = calculo.fgts * 0.2
     }
 
-    // Total (sem mostrar FGTS, apenas multa, e descontando INSS e IRRF)
-    const totalBruto = calculo.saldoSalario + calculo.avisoPrevio + calculo.decimoTerceiro + calculo.decimoTerceiroVencido + 
+    // Total (sem mostrar FGTS, apenas multa, e descontando INSS)
+    const totalBruto = calculo.saldoSalario + calculo.avisoPrevio + calculo.decimoTerceiro + 
                       calculo.ferias + calculo.multaFgts + calculo.salarioFamilia
     
-    calculo.total = totalBruto - calculo.descontoINSS - calculo.descontoIRRF
+    calculo.total = totalBruto - calculo.descontoINSS
 
     setResultado(calculo)
   }
@@ -463,7 +329,7 @@ export default function CalculadoraRescisoria() {
           <div class="title">CÁLCULO DE RESCISÃO TRABALHISTA</div>
           <div class="contact">
             <strong>NEVES & COSTA ADVOCACIA</strong><br>
-            Email: contato@nevesecosta.com.br | Telefone: (73) 9122-5215
+            Email: contato@nevesecosta.com.br | Telefone: (73) 99934-8552
           </div>
         </div>
 
@@ -509,11 +375,6 @@ export default function CalculadoraRescisoria() {
             <span>13º Proporcional:</span>
             <span>${formatCurrency(calc.decimoTerceiro)}</span>
           </div>
-          ${calc.decimoTerceiroVencido > 0 ? `
-          <div class="data-row">
-            <span>13º Vencido:</span>
-            <span>${formatCurrency(calc.decimoTerceiroVencido)}</span>
-          </div>` : ''}
           <div class="data-row">
             <span>Férias + 1/3:</span>
             <span>${formatCurrency(calc.ferias)}</span>
@@ -531,11 +392,6 @@ export default function CalculadoraRescisoria() {
             <span>Desconto INSS:</span>
             <span>- ${formatCurrency(calc.descontoINSS)}</span>
           </div>
-          ${calc.descontoIRRF > 0 ? `
-          <div class="data-row" style="color: #dc2626; border-color: #dc2626;">
-            <span>Desconto IRRF:</span>
-            <span>- ${formatCurrency(calc.descontoIRRF)}</span>
-          </div>` : ''}
         </div>
 
         <div class="total">
@@ -618,7 +474,7 @@ export default function CalculadoraRescisoria() {
       `Olá! Fiz um cálculo de rescisão no site de vocês para ${resultado.nomeFuncionario} e gostaria de uma consulta jurídica. O valor calculado foi ${formatCurrency(resultado.total)}.` :
       'Olá! Gostaria de uma consulta jurídica sobre rescisão trabalhista.'
     
-    const url = `https://wa.me/557391225215?text=${encodeURIComponent(mensagem)}`
+    const url = `https://wa.me/5573999348552?text=${encodeURIComponent(mensagem)}`
     window.open(url, '_blank')
   }
 
@@ -782,18 +638,6 @@ export default function CalculadoraRescisoria() {
                       🏖️ Férias vencidas
                     </label>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="decimoTerceiroVencido"
-                      checked={formData.decimoTerceiroVencido}
-                      onChange={(e) => setFormData({...formData, decimoTerceiroVencido: e.target.checked})}
-                      className="w-5 h-5 text-[#fbbf24] bg-gray-800 border-gray-700 rounded focus:ring-[#fbbf24]"
-                    />
-                    <label htmlFor="decimoTerceiroVencido" className="text-white">
-                      🎄 13º Vencido
-                    </label>
-                  </div>
                 </div>
 
 
@@ -861,15 +705,6 @@ export default function CalculadoraRescisoria() {
                     </div>
                   </div>
 
-                  {resultado.decimoTerceiroVencido > 0 && (
-                    <div className="bg-gray-800 rounded-lg p-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">13º Vencido:</span>
-                        <span className="text-white font-semibold">{formatCurrency(resultado.decimoTerceiroVencido)}</span>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="bg-gray-800 rounded-lg p-4">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-300">Férias + 1/3:</span>
@@ -900,15 +735,6 @@ export default function CalculadoraRescisoria() {
                       <span className="text-red-300 font-semibold">- {formatCurrency(resultado.descontoINSS)}</span>
                     </div>
                   </div>
-
-                  {resultado.descontoIRRF > 0 && (
-                    <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 mt-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-red-300">Desconto IRRF:</span>
-                        <span className="text-red-300 font-semibold">- {formatCurrency(resultado.descontoIRRF)}</span>
-                      </div>
-                    </div>
-                  )}
 
                   <div className="bg-[#fbbf24] rounded-lg p-4">
                     <div className="flex justify-between items-center">
