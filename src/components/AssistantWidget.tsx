@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { X, Bot, Send, Loader2, MessageCircle, Paperclip, Mic } from 'lucide-react'
-// import { useSpeechRecognition } from 'react-speech-kit'
+import { X, Bot, Send, Loader2, MessageCircle, Paperclip } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 import type { ChatMessage, LeadData, ChatApiResponse } from '@/types/assistantTypes'
 
@@ -38,14 +37,6 @@ export default function AssistantWidget() {
 
   const endRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Speech recognition (temporarily disabled)
-  // const { listen, stop } = useSpeechRecognition({
-  //   onResult: (text: any) => setInputValue(String(text || '')),
-  // })
-  const listen = (_opts?: any) => {}
-  const stop = () => {}
-  const [isListening, setIsListening] = useState(false)
 
   // Scroll
   const scrollToBottom = () => endRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -444,20 +435,12 @@ export default function AssistantWidget() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="absolute right-10 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-600"
                 title="Anexar arquivo"
               >
                 <Paperclip size={20} />
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => { if (isListening) { stop(); setIsListening(false) } else { listen({ lang: 'pt-BR' }); setIsListening(true) } }}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full ${isListening ? 'text-red-500' : 'text-gray-400 hover:text-gray-600'}`}
-              title={isListening ? 'Parar gravação' : 'Falar'}
-            >
-              <Mic size={20} />
-            </button>
           </div>
           <button type="submit" className="p-2 bg-yellow-500 text-black rounded-full hover:bg-yellow-600 disabled:opacity-50" disabled={isSending}>
             {isSending ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
