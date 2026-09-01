@@ -103,6 +103,13 @@ export default function AssistantWidget() {
     return `https://wa.me/557391225215?text=${encodeURIComponent(normalized)}`
   }
 
+  // Detect explicit request for human/lawyer/WhatsApp
+  const detectExplicitWhatsAppRequest = (text: string): boolean => {
+    const normalized = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const keywords = ['advogado', 'atendente', 'humano', 'pessoa', 'whatsapp', 'falar com']
+    return keywords.some(keyword => normalized.includes(keyword))
+  }
+
   // File upload
   const uploadPublic = async (file: File) => {
     try {
@@ -211,6 +218,19 @@ export default function AssistantWidget() {
       // Show AI reply
       addAssistantImmediate(data.reply)
 
+      // Check for explicit WhatsApp request during chat
+      if (phase === 'chat' && detectExplicitWhatsAppRequest(userMessage)) {
+        setTimeout(() => {
+          addAssistant('Entendi que você gostaria de falar com um advogado. Posso encaminhar você agora!')
+          setTimeout(() => {
+            addMsg('', 'assistant', 'options', {
+              options: ['📲 Falar com um advogado no WhatsApp', '✏️ Continuar conversando']
+            })
+          }, 800)
+        }, 1200)
+        return
+      }
+
       // Check if lead is complete
       if (data.leadComplete && data.whatsappLink) {
         setWhatsappLink(data.whatsappLink)
@@ -276,9 +296,13 @@ export default function AssistantWidget() {
   // Handle complete phase option click
   const onCompleteOption = (option: string) => {
     addUser(option)
-    if (option === '📲 Enviar para WhatsApp') {
+    if (option === '📲 Enviar para WhatsApp' || option === '📲 Falar com um advogado no WhatsApp') {
       if (whatsappLink) {
         window.open(whatsappLink, '_blank')
+      } else {
+        // Fallback: send lead summary to WhatsApp
+        const summary = `Olá! Gostaria de atendimento com a Advocacia Neves Costa. Meu caso: ${lead.resumo || 'Não informado'}`
+        window.open(waLink(summary), '_blank')
       }
       addAssistant('Obrigado pelo contato! 🙏 Sua mensagem foi redirecionada. Entraremos em contato o mais breve possível!')
       resetAndClose(2500)
@@ -382,13 +406,6 @@ export default function AssistantWidget() {
           <img src="/Logo transparente.png" alt="Logo N&C" className="h-8 w-auto" />
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => window.open(waLink('Olá, gostaria de atendimento com a Advocacia Neves Costa.'), '_blank')}
-            className="text-white hover:bg-green-600 p-2 rounded-lg"
-            title="Advocacia Neves Costa (WhatsApp)"
-          >
-            <MessageCircle size={20} />
-          </button>
           <button onClick={() => resetAndClose()} className="text-white hover:bg-gray-800 p-2 rounded-lg" title="Fechar e reiniciar">
             <X size={20} />
           </button>
