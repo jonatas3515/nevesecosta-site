@@ -15,11 +15,13 @@ const baseLinks = [
   { href: "/admin/avaliacoes", label: "Avaliações", key: "can_reviews" },
   { href: "/admin/usuarios", label: "Usuários", key: "is_admin" },
   { href: "/admin/configuracoes", label: "Configurações", key: "is_admin" },
+  { href: "/admin/banner", label: "Banner", key: "is_admin" },
+  { href: "/admin/calculadora", label: "Calculadora", key: "is_admin" },
 ] as const;
 
 export function AdminNav() {
   const pathname = usePathname();
-  const [allowed, setAllowed] = useState<{ is_admin?: boolean; can_posts?: boolean; can_categories?: boolean; can_comments?: boolean; can_reviews?: boolean; can_orders?: boolean; can_products?: boolean } | null>(null)
+  const [allowed, setAllowed] = useState<{ is_admin?: boolean; can_posts?: boolean; can_categories?: boolean; can_comments?: boolean; can_reviews?: boolean; can_orders?: boolean; can_products?: boolean }>({})
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export function AdminNav() {
   return (
     <nav className="mb-6 border-b border-gold-500/30 pb-4">
       <ul className="flex items-center gap-2 px-2 flex-wrap">
-        {(allowed ? baseLinks.filter(l => l.key === 'dashboard' || (allowed as any)[l.key]) : baseLinks).map((l) => {
+        {baseLinks.filter(l => l.key === 'dashboard' || !!(allowed as any)[l.key]).map((l) => {
           const active = pathname === l.href
           return (
             <li key={l.href}>
