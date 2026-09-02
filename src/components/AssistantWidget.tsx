@@ -307,8 +307,11 @@ export default function AssistantWidget() {
       addAssistant('Obrigado pelo contato! 🙏 Sua mensagem foi redirecionada. Entraremos em contato o mais breve possível!')
       resetAndClose(2500)
     } else if (option === '✏️ Continuar conversando') {
+      // Return to chat phase without closing widget or losing history
       setPhase('chat')
-      addAssistantImmediate('Claro! Continue descrevendo sua situação ou me faça alguma pergunta. 😊')
+      // Remove only the current handoff options message, not all options
+      setMessages(prev => prev.filter(m => !(m.type === 'options' && m.options?.includes('📲 Falar com um advogado no WhatsApp'))))
+      addAssistantImmediate('Claro! Pode continuar me contando o que aconteceu.')
     }
   }
 
@@ -338,6 +341,47 @@ export default function AssistantWidget() {
     }
   }
 
+  // Parse Markdown safely (bold only)
+  const parseMarkdown = (text: string) => {
+    const boldRegex = /\*\*(.+?)\*\*/g
+
+    // Find all **bold** matches
+    let match
+    const boldMatches: Array<{ start: number; end: number; text: string }> = []
+    while ((match = boldRegex.exec(text)) !== null) {
+      boldMatches.push({ start: match.index, end: match.index + match[0].length, text: match[1] })
+    }
+
+    // Build result with bold markers
+    let result = text
+    boldMatches.reverse().forEach(m => {
+      result = result.slice(0, m.start) + '\x00BOLD_START\x00' + m.text + '\x00BOLD_END\x00' + result.slice(m.end)
+    })
+
+    // Split by markers and build JSX
+    const segments = result.split(/(\x00BOLD_START\x00|\x00BOLD_END\x00)/)
+    let isBold = false
+    const parsed: React.ReactNode[] = []
+    let segmentIndex = 0
+
+    for (const segment of segments) {
+      if (segment === '\x00BOLD_START\x00') {
+        isBold = true
+      } else if (segment === '\x00BOLD_END\x00') {
+        isBold = false
+      } else if (segment) {
+        if (isBold) {
+          parsed.push(<strong key={`bold-${segmentIndex}`}>{segment}</strong>)
+        } else {
+          parsed.push(segment)
+        }
+        segmentIndex++
+      }
+    }
+
+    return parsed.length > 0 ? parsed : text
+  }
+
   // Render message
   const renderMessage = (m: Message) => {
     const isUser = m.sender === 'user'
@@ -345,7 +389,7 @@ export default function AssistantWidget() {
       return (
         <div className="flex justify-start mb-4">
           <div className="max-w-[80%] bg-white p-3 rounded-2xl shadow-sm">
-            {m.text && <p className="text-gray-800 mb-2">{m.text}</p>}
+            {m.text && <p className="text-gray-800 mb-2">{parseMarkdown(m.text)}</p>}
             <div className="flex flex-wrap gap-2">
               {m.options.map((op, i) => (
                 <button key={i} onClick={() => onOption(op)} className="px-3 py-1.5 bg-yellow-50 text-yellow-800 rounded-full text-sm hover:bg-yellow-100 border border-yellow-200 transition-colors">
@@ -360,7 +404,7 @@ export default function AssistantWidget() {
     return (
       <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
         <div className={`max-w-[80%] ${isUser ? 'bg-yellow-500 text-black' : 'bg-white text-gray-800'} p-3 rounded-2xl shadow-sm`}>
-          {m.text.split('\n').map((line, i) => (<p key={i} className={i > 0 ? 'mt-1' : ''}>{line}</p>))}
+          {m.text.split('\n').map((line, i) => (<p key={i} className={i > 0 ? 'mt-1' : ''}>{parseMarkdown(line)}</p>))}
         </div>
       </div>
     )
