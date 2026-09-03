@@ -19,6 +19,31 @@ const defaultNavItems: NavItem[] = [
   { name: 'Contato', href: '/#contato' },
 ]
 
+
+function normalizeNavHref(rawHref: string): string {
+  const href = (rawHref || '').trim()
+  const lower = href.toLowerCase()
+
+  if (
+    lower === 'contato' ||
+    lower === '/contato' ||
+    lower === '#contato' ||
+    lower === '/#contato'
+  ) {
+    return '/#contato'
+  }
+
+  if (href.startsWith('http://') || href.startsWith('https://')) {
+    return href
+  }
+
+  if (!href) return '/'
+
+  if (href.startsWith('/#')) return href
+
+  return href.startsWith('/') ? href : '/' + href
+}
+
 const defaultCta = { label: 'Consulta Aqui', href: '/#contato' }
 
 export default function Header() {
@@ -44,14 +69,14 @@ export default function Header() {
       if (Array.isArray(data.items)) {
         const clean = data.items
           .filter((it) => it && typeof it.name === 'string' && typeof it.href === 'string')
-          .map((it) => { const h = it.href.trim(); return { name: it.name.trim(), href: h.startsWith('/') || h.startsWith('http') ? h : '/' + h } })
+          .map((it) => ({ name: it.name.trim(), href: normalizeNavHref(it.href) }))
           .filter((it) => it.name && it.href)
         if (clean.length > 0) setNavItems(clean)
       }
 
       const label = data.cta?.label?.trim()
       const href = data.cta?.href?.trim()
-      if (label && href) setCta({ label, href })
+      if (label && href) setCta({ label, href: normalizeNavHref(href) })
     }
     loadNav()
     return () => {
