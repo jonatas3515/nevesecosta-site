@@ -4,10 +4,28 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Menu, X } from 'lucide-react'
+import { getSiteContent } from '@/lib/siteContent'
+import type { NavItem, HeaderNavData } from '@/types/navigation'
+
+const defaultNavItems: NavItem[] = [
+  { name: 'Início', href: '/' },
+  { name: 'Sobre', href: '/#sobre' },
+  { name: 'Equipe', href: '/equipe' },
+  { name: 'Áreas de Atuação', href: '/#areas' },
+  { name: 'Calculadora', href: '/calculadora' },
+  { name: 'Consulta Processo', href: '/consulta-processo' },
+  { name: 'Blog', href: '/blog' },
+  { name: 'Avaliações', href: '/#avaliacoes' },
+  { name: 'Contato', href: '/#contato' },
+]
+
+const defaultCta = { label: 'Consulta Aqui', href: '/#contato' }
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [navItems, setNavItems] = useState<NavItem[]>(defaultNavItems)
+  const [cta, setCta] = useState(defaultCta)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,17 +35,29 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const navItems = [
-    { name: 'Início', href: '/' },
-    { name: 'Sobre', href: '/#sobre' },
-    { name: 'Equipe', href: '/equipe' },
-    { name: 'Áreas de Atuação', href: '/#areas' },
-    { name: 'Calculadora', href: '/calculadora' },
-    { name: 'Consulta Processo', href: '/consulta-processo' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Avaliações', href: '/#avaliacoes' },
-    { name: 'Contato', href: '/#contato' },
-  ]
+  useEffect(() => {
+    let mounted = true
+    const loadNav = async () => {
+      const data = await getSiteContent<HeaderNavData>('header.nav')
+      if (!mounted || !data) return
+
+      if (Array.isArray(data.items)) {
+        const clean = data.items
+          .filter((it) => it && typeof it.name === 'string' && typeof it.href === 'string')
+          .map((it) => ({ name: it.name.trim(), href: it.href.trim() }))
+          .filter((it) => it.name && it.href)
+        if (clean.length > 0) setNavItems(clean)
+      }
+
+      const label = data.cta?.label?.trim()
+      const href = data.cta?.href?.trim()
+      if (label && href) setCta({ label, href })
+    }
+    loadNav()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   return (
     <header
@@ -40,19 +70,19 @@ export default function Header() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center" aria-label="Ir para página inicial">
             <Image
-              src="/Logo.jpg"
+              src="/Logo transparente.png"
               alt="Neves & Costa Advocacia"
-              width={180}
-              height={60}
-              className="h-12 w-auto md:h-14"
+              width={220}
+              height={80}
+              className="h-14 w-auto md:h-16"
               priority
             />
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center space-x-8" aria-label="Navegação principal">
             {navItems.map((item) => (
               <Link
                 key={item.name}
@@ -66,16 +96,18 @@ export default function Header() {
 
           {/* CTA Button */}
           <Link
-            href="/#contato"
+            href={cta.href}
             className="hidden md:block bg-[#fbbf24] text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-[#d97706] transition-colors"
           >
-            Consulta Gratuita
+            {cta.label}
           </Link>
 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden text-white"
+            aria-label={isMobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
@@ -83,7 +115,7 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <nav className="md:hidden mt-4 pb-4 space-y-4">
+          <nav className="md:hidden mt-4 pb-4 space-y-4" aria-label="Menu mobile">
             {navItems.map((item) => (
               <Link
                 key={item.name}
@@ -95,11 +127,11 @@ export default function Header() {
               </Link>
             ))}
             <Link
-              href="/#contato"
+              href={cta.href}
               onClick={() => setIsMobileMenuOpen(false)}
               className="block bg-[#fbbf24] text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-[#d97706] transition-colors text-center"
             >
-              Consulta Gratuita
+              {cta.label}
             </Link>
           </nav>
         )}

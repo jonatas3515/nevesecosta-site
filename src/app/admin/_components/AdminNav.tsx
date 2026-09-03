@@ -15,6 +15,7 @@ const baseLinks = [
   { href: "/admin/avaliacoes", label: "Avaliações", key: "can_reviews" },
   { href: "/admin/usuarios", label: "Usuários", key: "is_admin" },
   { href: "/admin/configuracoes", label: "Configurações", key: "is_admin" },
+  { href: "/admin/site-content", label: "Site (CMS)", key: "is_admin" },
   { href: "/admin/banner", label: "Banner", key: "is_admin" },
   { href: "/admin/calculadora", label: "Calculadora", key: "is_admin" },
   { href: "/admin/equipe", label: "Equipe", key: "is_admin" },

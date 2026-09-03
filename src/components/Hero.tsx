@@ -1,10 +1,56 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, Shield, Award } from 'lucide-react'
+import { ArrowRight, Award } from 'lucide-react'
+import { getSiteContentServer } from '@/lib/siteContentServer'
 
-export default function Hero() {
+type HomeHeroStat = { src: string; alt: string }
+type HomeHeroCta = { label: string; href: string }
+type HomeHeroData = {
+  badge_text?: string
+  headline_line1?: string
+  headline_highlight?: string
+  subheadline?: string
+  logo_src?: string
+  logo_alt?: string
+  cta_primary?: HomeHeroCta
+  cta_secondary?: HomeHeroCta
+  cta_tertiary?: HomeHeroCta
+  stats?: HomeHeroStat[]
+}
+
+const defaultHero: Required<HomeHeroData> = {
+  badge_text: 'Advocacia 100% Digital desde 2021',
+  headline_line1: 'Do Seu Direito,',
+  headline_highlight: 'A Gente Cuida',
+  subheadline: 'Do Extremo Sul da Bahia para todo o Brasil. Advocacia 100% digital com segurança, clareza e dedicação.',
+  logo_src: '/Logo transparente.png',
+  logo_alt: 'Neves & Costa Logo',
+  cta_primary: { label: 'Agende uma Consulta', href: '#contato' },
+  cta_secondary: { label: 'Nossas Especialidades', href: '/#areas' },
+  cta_tertiary: { label: 'Calcule sua Rescisão Aqui', href: '/calculadora' },
+  stats: [
+    { src: '/100%25%20Digital.png', alt: '100% Digital' },
+    { src: '/Todo o Brasil.png', alt: 'Todo o Brasil' },
+    { src: '/Since 2021.png', alt: 'Desde 2021' },
+  ],
+}
+
+export default async function Hero() {
+  const hero = (await getSiteContentServer<HomeHeroData>('home.hero')) || {}
+
+  const stats = Array.isArray(hero.stats) && hero.stats.length > 0 ? hero.stats : defaultHero.stats
+  const logoSrc = (hero.logo_src || '').trim() || defaultHero.logo_src
+  const logoAlt = (hero.logo_alt || '').trim() || defaultHero.logo_alt
+  const badgeText = (hero.badge_text || '').trim() || defaultHero.badge_text
+  const headlineLine1 = (hero.headline_line1 || '').trim() || defaultHero.headline_line1
+  const headlineHighlight = (hero.headline_highlight || '').trim() || defaultHero.headline_highlight
+  const subheadline = (hero.subheadline || '').trim() || defaultHero.subheadline
+  const ctaPrimary = hero.cta_primary?.label && hero.cta_primary?.href ? hero.cta_primary : defaultHero.cta_primary
+  const ctaSecondary = hero.cta_secondary?.label && hero.cta_secondary?.href ? hero.cta_secondary : defaultHero.cta_secondary
+  const ctaTertiary = hero.cta_tertiary?.label && hero.cta_tertiary?.href ? hero.cta_tertiary : defaultHero.cta_tertiary
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-black overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center bg-black overflow-hidden" aria-label="Seção principal">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
@@ -18,7 +64,7 @@ export default function Hero() {
           <div className="flex justify-center mb-0">
             <div className="inline-flex items-center space-x-3 bg-[#fbbf24]/20 backdrop-blur-sm px-6 py-3 rounded-full border border-[#fbbf24]/30">
               <Award className="text-[#fbbf24]" size={20} />
-              <span className="text-white font-medium text-base">Advocacia 100% Digital desde 2021</span>
+              <span className="text-white font-medium text-base">{badgeText}</span>
             </div>
           </div>
 
@@ -26,8 +72,8 @@ export default function Hero() {
             {/* Logo Transparente - Ocupa 3 colunas */}
             <div className="md:col-span-3 flex justify-center md:justify-start">
               <Image
-                src="/Logo transparente.png"
-                alt="Neves & Costa Logo"
+                src={logoSrc}
+                alt={logoAlt}
                 width={800}
                 height={800}
                 className="w-full max-w-2xl h-auto drop-shadow-2xl"
@@ -40,35 +86,35 @@ export default function Hero() {
 
               {/* Main Heading */}
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
-                Do Seu Direito,
-                <span className="block text-[#fbbf24]">A Gente Cuida</span>
+                {headlineLine1}
+                <span className="block text-[#fbbf24]">{headlineHighlight}</span>
               </h1>
 
               <p className="text-base md:text-lg text-gray-200 mb-8">
-                Do Extremo Sul da Bahia para todo o Brasil. Advocacia 100% digital com segurança, clareza e dedicação.
+                {subheadline}
               </p>
 
               {/* CTA Buttons */}
               <div className="flex flex-col gap-3 mb-8">
                 <Link
-                  href="#contato"
+                  href={ctaPrimary.href}
                   className="inline-flex items-center justify-center bg-[#fbbf24] text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-[#d97706] transition-all"
                 >
-                  Agende uma Consulta
+                  {ctaPrimary.label}
                   <ArrowRight className="ml-2" size={18} />
                 </Link>
                 <Link
-                  href="/#areas"
+                  href={ctaSecondary.href}
                   className="inline-flex items-center justify-center bg-white/10 backdrop-blur-sm text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/20 transition-all border border-white/30"
                 >
-                  Nossas Especialidades
+                  {ctaSecondary.label}
                   <ArrowRight className="ml-2" size={18} />
                 </Link>
                 <Link
-                  href="/calculadora"
+                  href={ctaTertiary.href}
                   className="inline-flex items-center justify-center bg-[#fbbf24] text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-[#d97706] transition-all"
                 >
-                  Calcule sua Rescisão Aqui
+                  {ctaTertiary.label}
                   <ArrowRight className="ml-2" size={18} />
                 </Link>
               </div>
@@ -77,11 +123,11 @@ export default function Hero() {
           </div>
 
           {/* Stats com Imagens - Muito Menores */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mt-12" role="list" aria-label="Diferenciais do escritório">
             <div className="flex justify-center">
               <Image
-                src="/100%25%20Digital.png"
-                alt="100% Digital"
+                src={stats[0]?.src || defaultHero.stats[0].src}
+                alt={stats[0]?.alt || defaultHero.stats[0].alt}
                 width={150}
                 height={75}
                 className="w-full max-w-[120px] h-auto"
@@ -89,8 +135,8 @@ export default function Hero() {
             </div>
             <div className="flex justify-center">
               <Image
-                src="/Todo o Brasil.png"
-                alt="Todo o Brasil"
+                src={stats[1]?.src || defaultHero.stats[1].src}
+                alt={stats[1]?.alt || defaultHero.stats[1].alt}
                 width={150}
                 height={75}
                 className="w-full max-w-[120px] h-auto"
@@ -98,8 +144,8 @@ export default function Hero() {
             </div>
             <div className="flex justify-center">
               <Image
-                src="/Since 2021.png"
-                alt="Desde 2021"
+                src={stats[2]?.src || defaultHero.stats[2].src}
+                alt={stats[2]?.alt || defaultHero.stats[2].alt}
                 width={150}
                 height={75}
                 className="w-full max-w-[120px] h-auto"
