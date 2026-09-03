@@ -80,10 +80,15 @@ export default async function Footer() {
   }
 
   const year = new Date().getFullYear()
-  const copyrightText = String(footer.copyright_text || defaultFooter.copyright_text).replace(
-    '{year}',
-    String(year)
-  )
+  const copyrightText = String(footer.copyright_text || defaultFooter.copyright_text)
+    .replace('{year}', String(year))
+    .replace(/&copy;/gi, '©')
+    .replace(/&reg;/gi, '®')
+    .replace(/&trade;/gi, '™')
+    .replace(/&amp;/g, '&')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
 
   const rawLogoSrc = String(footer.logo_src || defaultFooter.logo_src)
   const normalizedSrc = rawLogoSrc === '/Logo.png' ? '/logo.png' : rawLogoSrc
@@ -193,7 +198,7 @@ export default async function Footer() {
         </div>
 
         <div className="border-t border-gold-500/20 mt-8 pt-8 text-center text-gray-400">
-          <p dangerouslySetInnerHTML={{ __html: copyrightText }} />
+          <p className="whitespace-pre-line">{copyrightText}</p>
           <p className="mt-2 flex items-center justify-center gap-2">
             Desenvolvido por
             <Image
