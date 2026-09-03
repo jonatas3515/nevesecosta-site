@@ -44,7 +44,7 @@ export default function Header() {
       if (Array.isArray(data.items)) {
         const clean = data.items
           .filter((it) => it && typeof it.name === 'string' && typeof it.href === 'string')
-          .map((it) => ({ name: it.name.trim(), href: it.href.trim() }))
+          .map((it) => { const h = it.href.trim(); return { name: it.name.trim(), href: h.startsWith('/') || h.startsWith('http') ? h : '/' + h } })
           .filter((it) => it.name && it.href)
         if (clean.length > 0) setNavItems(clean)
       }

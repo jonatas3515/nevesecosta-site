@@ -30,7 +30,7 @@ type FooterData = {
 }
 
 const defaultFooter: Required<FooterData> = {
-  logo_src: '/Logo.png',
+  logo_src: '/logo.png',
   logo_alt: 'Neves & Costa Advocacia',
   description: 'Do seu direito, a gente cuida. Advocacia 100% digital do Extremo Sul da Bahia para todo o Brasil.',
   social: [
@@ -86,7 +86,8 @@ export default async function Footer() {
   )
 
   const rawLogoSrc = String(footer.logo_src || defaultFooter.logo_src)
-  const logoSrc = /\/logo\.jpg$/i.test(rawLogoSrc) ? '/Logo.png' : rawLogoSrc
+  const normalizedSrc = rawLogoSrc === '/Logo.png' ? '/logo.png' : rawLogoSrc
+  const logoSrc = /\/logo\.jpg$/i.test(normalizedSrc) ? '/logo.png' : normalizedSrc
 
   const socialIconMap: Record<FooterSocialPlatform, any> = {
     facebook: Facebook,
