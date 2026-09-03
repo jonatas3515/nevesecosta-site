@@ -103,6 +103,13 @@ export default function AssistantWidget() {
     return `https://wa.me/557391225215?text=${encodeURIComponent(normalized)}`
   }
 
+  // Detect explicit request for human/lawyer/WhatsApp
+  const detectExplicitWhatsAppRequest = (text: string): boolean => {
+    const normalized = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    const keywords = ['advogado', 'atendente', 'humano', 'pessoa', 'whatsapp', 'falar com']
+    return keywords.some(keyword => normalized.includes(keyword))
+  }
+
   // File upload
   const uploadPublic = async (file: File) => {
     try {
@@ -211,6 +218,19 @@ export default function AssistantWidget() {
       // Show AI reply
       addAssistantImmediate(data.reply)
 
+      // Check for explicit WhatsApp request during chat
+      if (phase === 'chat' && detectExplicitWhatsAppRequest(userMessage)) {
+        setTimeout(() => {
+          addAssistant('Entendi que você gostaria de falar com um advogado. Posso encaminhar você agora!')
+          setTimeout(() => {
+            addMsg('', 'assistant', 'options', {
+              options: ['📲 Falar com um advogado no WhatsApp', '✏️ Continuar conversando']
+            })
+          }, 800)
+        }, 1200)
+        return
+      }
+
       // Check if lead is complete
       if (data.leadComplete && data.whatsappLink) {
         setWhatsappLink(data.whatsappLink)
@@ -276,7 +296,7 @@ export default function AssistantWidget() {
   // Handle complete phase option click
   const onCompleteOption = (option: string) => {
     addUser(option)
-    if (option === '📲 Enviar para WhatsApp') {
+    if (option === '📲 Enviar para WhatsApp' || option === '📲 Falar com um advogado no WhatsApp') {
       if (whatsappLink) {
         window.open(whatsappLink, '_blank')
       } else {
@@ -289,6 +309,8 @@ export default function AssistantWidget() {
     } else if (option === '✏️ Continuar conversando') {
       // Return to chat phase without closing widget or losing history
       setPhase('chat')
+      // Remove only the current handoff options message, not all options
+      setMessages(prev => prev.filter(m => !(m.type === 'options' && m.options?.includes('📲 Falar com um advogado no WhatsApp'))))
       addAssistantImmediate('Claro! Pode continuar me contando o que aconteceu.')
     }
   }
