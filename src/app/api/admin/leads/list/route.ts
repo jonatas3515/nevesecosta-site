@@ -1,21 +1,25 @@
-import { cookies } from 'next/headers'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { getSupabaseAdmin, jsonResponse, errorResponse } from '@/lib/supabaseServer'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const authClient = createRouteHandlerClient({ cookies })
-    const { data: { session } } = await authClient.auth.getSession()
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.replace(/^Bearer\s+/i, '')
 
-    if (!session) {
+    if (!token) {
       return errorResponse('Não autenticado', 401)
     }
 
     const admin = getSupabaseAdmin()
+    const { data: { user }, error: authError } = await admin.auth.getUser(token)
+
+    if (authError || !user) {
+      return errorResponse('Não autenticado', 401)
+    }
+
     const { data: profile, error: profileError } = await admin
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single()
 
     if (profileError || profile?.role !== 'admin') {

@@ -12,6 +12,7 @@
 
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
+import { supabase } from '@/lib/supabaseClient'
 
 interface Lead {
   id: string
@@ -37,7 +38,12 @@ export default function ContatosPage() {
 
   const fetchLeads = async () => {
     try {
-      const response = await fetch('/api/admin/leads/list')
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: Record<string, string> = {}
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`
+      }
+      const response = await fetch('/api/admin/leads/list', { headers })
       if (!response.ok) throw new Error('Erro ao buscar contatos')
 
       const data = await response.json()
