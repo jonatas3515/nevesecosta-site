@@ -37,6 +37,7 @@ export default function AssistantWidget() {
 
   const endRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Scroll
   const scrollToBottom = () => endRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -185,6 +186,16 @@ export default function AssistantWidget() {
     setIsSending(true)
     setIsTyping(true)
 
+    // Detect explicit human/lawyer request before calling the API
+    if (phase === 'chat' && detectExplicitWhatsAppRequest(userMessage)) {
+      setIsTyping(false)
+      addAssistantImmediate('Entendi que você gostaria de falar com um advogado. Posso encaminhar você agora!', 'options', {
+        options: ['📲 Falar com um advogado no WhatsApp', '✏️ Continuar conversando']
+      })
+      setIsSending(false)
+      return
+    }
+
     // Add user message to history
     const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: userMessage }]
 
@@ -217,19 +228,6 @@ export default function AssistantWidget() {
 
       // Show AI reply
       addAssistantImmediate(data.reply)
-
-      // Check for explicit WhatsApp request during chat
-      if (phase === 'chat' && detectExplicitWhatsAppRequest(userMessage)) {
-        setTimeout(() => {
-          addAssistant('Entendi que você gostaria de falar com um advogado. Posso encaminhar você agora!')
-          setTimeout(() => {
-            addMsg('', 'assistant', 'options', {
-              options: ['📲 Falar com um advogado no WhatsApp', '✏️ Continuar conversando']
-            })
-          }, 800)
-        }, 1200)
-        return
-      }
 
       // Check if lead is complete
       if (data.leadComplete && data.whatsappLink) {
@@ -315,6 +313,29 @@ export default function AssistantWidget() {
     }
   }
 
+  // Handle chat phase handoff option click
+  const onHandoffOption = (option: string) => {
+    addUser(option)
+    if (option === '📲 Falar com um advogado no WhatsApp') {
+      const leadInfo = [
+        lead.nome ? `👤 Nome: ${lead.nome}` : '',
+        lead.whatsapp ? `📞 Contato: ${lead.whatsapp}` : '',
+        lead.area ? `⚖️ Área: ${lead.area}` : '',
+        lead.resumo ? `📝 Resumo: ${lead.resumo}` : ''
+      ].filter(Boolean).join('\n')
+      const body = leadInfo ? `Olá! Gostaria de falar com um advogado.\n\n${leadInfo}` : 'Olá! Gostaria de falar com um advogado.'
+      const url = waLink(body)
+      window.open(url, '_blank', 'noopener,noreferrer')
+      addAssistantImmediate('Você será redirecionado para o WhatsApp. Obrigado! 🙏')
+      resetAndClose(2500)
+    } else if (option === '✏️ Continuar conversando') {
+      // Remove only the current handoff options message, keep the rest of history
+      setMessages(prev => prev.filter(m => !(m.type === 'options' && m.options?.includes('✏️ Continuar conversando'))))
+      addAssistantImmediate('Claro! Conte um pouco sobre sua situação e eu ajudarei a direcionar o atendimento.')
+      setTimeout(() => inputRef.current?.focus(), 100)
+    }
+  }
+
   // Handle form submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -338,6 +359,8 @@ export default function AssistantWidget() {
       onLgpdOption(option)
     } else if (phase === 'complete') {
       onCompleteOption(option)
+    } else if (phase === 'chat') {
+      onHandoffOption(option)
     }
   }
 
@@ -392,7 +415,7 @@ export default function AssistantWidget() {
             {m.text && <p className="text-gray-800 mb-2">{parseMarkdown(m.text)}</p>}
             <div className="flex flex-wrap gap-2">
               {m.options.map((op, i) => (
-                <button key={i} onClick={() => onOption(op)} className="px-3 py-1.5 bg-yellow-50 text-yellow-800 rounded-full text-sm hover:bg-yellow-100 border border-yellow-200 transition-colors">
+                <button key={i} type="button" onClick={() => onOption(op)} className="px-3 py-1.5 bg-yellow-50 text-yellow-800 rounded-full text-sm hover:bg-yellow-100 border border-yellow-200 transition-colors">
                   {op}
                 </button>
               ))}
@@ -483,6 +506,7 @@ export default function AssistantWidget() {
         <form onSubmit={handleSubmit} className="flex gap-2">
           <div className="relative flex-1">
             <input
+              ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
