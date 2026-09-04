@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { Calendar, Clock, User, ArrowLeft, MessageCircle, Send } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { formatDate } from '@/utils/format'
 import { supabase } from '@/lib/supabaseClient'
 import MarkdownIt from 'markdown-it'
 import JsonLd from '@/components/seo/JsonLd'
@@ -176,12 +176,12 @@ export default function BlogPostPage() {
     if (!post) return
     if (!newComment.author || !newComment.content) return
 
-    // Insere como aprovado para aparecer instantaneamente
+    // Insere como pending para moderação
     const { data, error } = await supabase.from('comments').insert({
       post_id: post.id,
       author_name: newComment.author,
       content: newComment.content,
-      status: 'approved', // Aprovado automaticamente para aparecer na hora
+      status: 'pending', // Aguarda moderação antes de ser publicado
     }).select().single()
 
     if (error) {
@@ -405,9 +405,9 @@ export default function BlogPostPage() {
             )}
 
             {/* Internal Links (CTA) */}
-            <div className="bg-primary-50 border border-primary-100 rounded-lg p-8 md:p-12 mb-12">
-              <h2 className="text-2xl font-bold text-primary-900 mb-4">Precisa de orientação jurídica?</h2>
-              <p className="text-primary-800 mb-6">Conheça nossas áreas de atuação ou fale diretamente com nossa equipe.</p>
+            <div className="bg-white border border-gray-200 rounded-lg p-8 md:p-12 mb-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Precisa de orientação jurídica?</h2>
+              <p className="text-gray-700 mb-6">Conheça nossas áreas de atuação ou fale diretamente com nossa equipe.</p>
               <div className="flex flex-wrap gap-3">
                 <Link href="/areas" className="px-5 py-3 rounded-md bg-primary-600 text-white hover:bg-primary-700">Áreas de Atuação</Link>
                 <Link href="/contato" className="px-5 py-3 rounded-md bg-gold-500 text-gray-900 hover:bg-gold-600">Fale Conosco</Link>
