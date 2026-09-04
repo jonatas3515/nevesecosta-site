@@ -195,7 +195,7 @@ export async function GET(request: NextRequest) {
 
     const { data: leads, error } = await getSupabaseAdmin()
       .from('leads')
-      .select('id,nome,telefone,email,area,tipo,resumo,arquivos,aceite_lgpd,status,created_at')
+      .select('id,nome,telefone,email,area,tipo,resumo,arquivos,aceite_lgpd,status,created_at,origem')
       .order('created_at', { ascending: false })
 
     if (error) {
