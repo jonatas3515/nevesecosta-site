@@ -13,18 +13,19 @@ const baseLinks = [
   { href: "/admin/comentarios", label: "Comentários", key: "can_comments" },
   { href: "/admin/produtos", label: "Produtos", key: "can_products" },
   { href: "/admin/avaliacoes", label: "Avaliações", key: "can_reviews" },
-  { href: "/admin/usuarios", label: "Usuários", key: "is_admin" },
-  { href: "/admin/configuracoes", label: "Configurações", key: "is_admin" },
   { href: "/admin/site-content", label: "Site (CMS)", key: "is_admin" },
   { href: "/admin/banner", label: "Banner", key: "is_admin" },
+  { href: "/admin/usuarios", label: "Usuários", key: "is_admin" },
+  { href: "/admin/configuracoes", label: "Aviso", key: "is_admin" },
   { href: "/admin/calculadora", label: "Calculadora", key: "is_admin" },
-  { href: "/admin/equipe", label: "Equipe", key: "is_admin" },
+  { href: "/admin/leads", label: "Leads", key: "is_admin" },
   { href: "/admin/contatos", label: "Contatos", key: "is_admin" },
+  { href: "/admin/equipe", label: "Equipe", key: "can_team" },
 ] as const;
 
 export function AdminNav() {
   const pathname = usePathname();
-  const [allowed, setAllowed] = useState<{ is_admin?: boolean; can_posts?: boolean; can_categories?: boolean; can_comments?: boolean; can_reviews?: boolean; can_orders?: boolean; can_products?: boolean }>({})
+  const [allowed, setAllowed] = useState<{ is_admin?: boolean; can_posts?: boolean; can_categories?: boolean; can_comments?: boolean; can_reviews?: boolean; can_orders?: boolean; can_products?: boolean; can_team?: boolean }>({})
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export function AdminNav() {
           can_reviews: is_admin || !!perms?.can_reviews,
           can_orders: is_admin || !!perms?.can_orders,
           can_products: is_admin || !!perms?.can_products,
+          can_team: is_admin || !!(perms as any)?.can_team,
         })
       } catch {
         setAllowed({ is_admin })
