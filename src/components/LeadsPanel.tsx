@@ -24,10 +24,77 @@ interface Lead {
   area: string
   tipo: string
   resumo?: string
+  origem?: string
   arquivos: any[]
   aceite_lgpd: boolean
   status: string
   created_at: string
+}
+
+function formatPhone(raw: string | undefined | null): string {
+  const digits = String(raw || '').replace(/\D/g, '')
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+  }
+  if (digits.length >= 12 && digits.startsWith('55')) {
+    const after = digits.slice(2)
+    if (after.length === 11) {
+      return `+55 (${after.slice(0, 2)}) ${after.slice(2, 7)}-${after.slice(7)}`
+    }
+    if (after.length === 10) {
+      return `+55 (${after.slice(0, 2)}) ${after.slice(2, 6)}-${after.slice(6)}`
+    }
+  }
+  return String(raw || '')
+}
+
+function formatStatus(status: string | undefined | null): string {
+  const key = String(status || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .trim()
+  switch (key) {
+    case 'novo': return 'Novo'
+    case 'contatado': return 'Contatado'
+    case 'em analise': return 'Em análise'
+    case 'concluido': return 'Concluído'
+    default: return String(status || '')
+  }
+}
+
+const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+  dateStyle: 'short',
+  timeStyle: 'short'
+})
+
+function formatDate(iso: string | undefined | null): string {
+  if (!iso) return ''
+  try {
+    return dateFormatter.format(new Date(iso))
+  } catch {
+    return String(iso)
+  }
+}
+
+function escapeCsvCell(value: any): string {
+  let cell = value === null || value === undefined ? '' : String(value)
+  const trimmed = cell.trim()
+  if (
+    trimmed.startsWith('=') ||
+    trimmed.startsWith('+') ||
+    trimmed.startsWith('-') ||
+    trimmed.startsWith('@')
+  ) {
+    cell = "'" + cell
+  }
+  cell = cell.replace(/\r\n|\r|\n/g, ' ')
+  cell = cell.replace(/"/g, '""')
+  return `"${cell}"`
 }
 
 export default function LeadsPanel() {
@@ -100,24 +167,39 @@ export default function LeadsPanel() {
   })
 
   const exportToCSV = () => {
-    const headers = ['Nome', 'Telefone', 'Email', 'Área', 'Tipo', 'Status', 'Data']
+    if (filteredLeads.length === 0) return
+
+    const headers = [
+      'Nome', 'Telefone', 'E-mail', 'Área', 'Tipo', 'Resumo',
+      'Status', 'Origem', 'Data de cadastro', 'Consentimento LGPD'
+    ]
+
     const rows = filteredLeads.map(lead => [
       lead.nome,
-      lead.telefone,
-      lead.email || '',
+      formatPhone(lead.telefone),
+      lead.email,
       lead.area,
       lead.tipo,
-      lead.status,
-      new Date(lead.created_at).toLocaleDateString('pt-BR')
+      lead.resumo,
+      formatStatus(lead.status),
+      lead.origem,
+      formatDate(lead.created_at),
+      lead.aceite_lgpd ? 'Sim' : 'Não'
     ])
-    
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
+
+    const csv = '\uFEFF' + [headers, ...rows]
+      .map(row => row.map(escapeCsvCell).join(';'))
+      .join('\r\n')
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = `leads_${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
     a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
   }
 
   if (!isAdmin) {
