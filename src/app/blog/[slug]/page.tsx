@@ -8,6 +8,7 @@ import { Calendar, Clock, User, ArrowLeft, MessageCircle, Send } from 'lucide-re
 import { formatDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabaseClient'
 import MarkdownIt from 'markdown-it'
+import { sanitizeBlogHtml } from '@/lib/sanitizeHtml'
 import JsonLd from '@/components/seo/JsonLd'
 import Canonical from '@/components/seo/Canonical'
 import Image from 'next/image'
@@ -375,7 +376,7 @@ export default function BlogPostPage() {
             <article className="bg-white rounded-lg shadow-md p-8 md:p-12 mb-12">
               <div
                 className="prose prose-lg max-w-none"
-                dangerouslySetInnerHTML={{ __html: post?.content_html || '' }}
+                dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post?.content_html || '') }}
                 style={{ lineHeight: '1.8' }}
               />
             </article>
