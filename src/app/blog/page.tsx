@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Calendar, Clock, User, ArrowRight, Search } from 'lucide-react'
-import { formatDate } from '@/utils/format'
+import { formatDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabaseClient'
 import Image from 'next/image'
 import JsonLd from '@/components/seo/JsonLd'
