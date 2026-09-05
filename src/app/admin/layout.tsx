@@ -13,7 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [ready, setReady] = useState(false)
   const [authed, setAuthed] = useState(false)
   const [isStaff, setIsStaff] = useState<boolean | null>(null)
-  const [userEmail, setUserEmail] = useState('')
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [userRole, setUserRole] = useState('')
   const [userName, setUserName] = useState('')
   const [showChangePassword, setShowChangePassword] = useState(false)
@@ -28,24 +28,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const session = data.session
       setAuthed(!!session)
       if (session?.user?.id) {
-        setUserEmail(session.user.email || '')
         try {
           const { data: prof, error } = await supabase
             .from('profiles')
             .select('role, full_name, username')
             .eq('id', session.user.id)
             .single()
-          if (error) setIsStaff(true)
-          else {
-            setIsStaff(prof ? ['admin', 'editor'].includes((prof as any).role) : false)
-            setUserRole((prof as any)?.role || '')
+          // Fail-closed: erro ou perfil ausente nega acesso
+          if (error || !prof) {
+            setIsStaff(false)
+            setIsSuperAdmin(false)
+          } else {
+            const role = (prof as any).role
+            setIsStaff(['admin', 'editor'].includes(role))
+            // Super admin é definido pelo role no banco (sem e-mail fixo)
+            setIsSuperAdmin(role === 'admin')
+            setUserRole(role || '')
             setUserName((prof as any)?.full_name || (prof as any)?.username || '')
           }
         } catch {
-          setIsStaff(true)
+          // Fail-closed: erro na consulta não deve liberar acesso
+          setIsStaff(false)
+          setIsSuperAdmin(false)
         }
       } else {
         setIsStaff(false)
+        setIsSuperAdmin(false)
       }
       setReady(true)
     }
@@ -116,11 +124,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold text-gold-500">
               {userName && <span className="text-gray-300">{userName} • </span>}
-              {userEmail?.toLowerCase() === 'jonatascosta.adv@gmail.com' ? 'Administrador Geral' : 'Editor'} • Neves & Costa
+              {isSuperAdmin ? 'Administrador Geral' : 'Editor'} • Neves & Costa
             </h1>
             {authed && (
               <div className="flex gap-3">
-                {userEmail?.toLowerCase() === 'jonatascosta.adv@gmail.com' && (
+                {isSuperAdmin && (
                   <button
                     onClick={() => setShowChangePassword(true)}
                     className="text-sm text-gold-500 hover:text-gold-400 hover:underline"
