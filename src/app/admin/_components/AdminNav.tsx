@@ -25,34 +25,44 @@ const baseLinks = [
 
 export function AdminNav() {
   const pathname = usePathname();
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
   const [allowed, setAllowed] = useState<{ is_admin?: boolean; can_posts?: boolean; can_categories?: boolean; can_comments?: boolean; can_reviews?: boolean; can_orders?: boolean; can_products?: boolean; can_team?: boolean }>({})
   const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.auth.getSession();
-      const uid = data.session?.user?.id;
-      if (!uid) { setAllowed({}); return }
-      let is_admin = false
+      setIsLoadingPermissions(true);
       try {
-        const { data: prof } = await supabase.from('profiles').select('role').eq('id', uid).single();
-        is_admin = prof?.role === 'admin'
-      } catch {}
-      try {
-        const { data: perms } = await supabase.from('admin_permissions').select('*').eq('user_id', uid).maybeSingle();
-        console.log('[AdminNav] Permissions loaded:', perms)
-        setAllowed({
-          is_admin,
-          can_posts: is_admin || !!perms?.can_posts,
-          can_categories: is_admin || !!perms?.can_categories,
-          can_comments: is_admin || !!perms?.can_comments,
-          can_reviews: is_admin || !!perms?.can_reviews,
-          can_orders: is_admin || !!perms?.can_orders,
-          can_products: is_admin || !!perms?.can_products,
-          can_team: is_admin || !!(perms as any)?.can_team,
-        })
-      } catch {
-        setAllowed({ is_admin })
+        const { data } = await supabase.auth.getSession();
+        const uid = data.session?.user?.id;
+        if (!uid) { 
+          setAllowed({}); 
+          setIsLoadingPermissions(false);
+          return 
+        }
+        let is_admin = false
+        try {
+          const { data: prof } = await supabase.from('profiles').select('role').eq('id', uid).single();
+          is_admin = prof?.role === 'admin'
+        } catch {}
+        try {
+          const { data: perms } = await supabase.from('admin_permissions').select('*').eq('user_id', uid).maybeSingle();
+          console.log('[AdminNav] Permissions loaded:', perms)
+          setAllowed({
+            is_admin,
+            can_posts: is_admin || !!perms?.can_posts,
+            can_categories: is_admin || !!perms?.can_categories,
+            can_comments: is_admin || !!perms?.can_comments,
+            can_reviews: is_admin || !!perms?.can_reviews,
+            can_orders: is_admin || !!perms?.can_orders,
+            can_products: is_admin || !!perms?.can_products,
+            can_team: is_admin || !!(perms as any)?.can_team,
+          })
+        } catch {
+          setAllowed({ is_admin })
+        }
+      } finally {
+        setIsLoadingPermissions(false);
       }
     }
     load()
@@ -61,7 +71,16 @@ export function AdminNav() {
   return (
     <nav className="mb-6 border-b border-gold-500/30 pb-4">
       <ul className="flex items-center gap-2 px-2 flex-wrap">
-        {baseLinks.filter(l => l.key === 'dashboard' || !!(allowed as any)[l.key]).map((l) => {
+        {baseLinks.filter(l => {
+          // Dashboard é sempre visível (link determinístico)
+          if (l.key === 'dashboard') return true;
+          
+          // Enquanto carregando, nenhum link condicional deve aparecer (fail-closed)
+          if (isLoadingPermissions) return false;
+          
+          // Após carregamento, mostrar apenas se permissão for explicitamente true
+          return !!(allowed as any)[l.key];
+        }).map((l) => {
           const active = pathname === l.href
           return (
             <li key={l.href}>
