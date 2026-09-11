@@ -263,7 +263,7 @@ export default function AdminTeamPage() {
                 <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
                   <MDEditor value={form.bio || ''} onChange={(v) => setForm(f => ({...f, bio: (v || '').toString()}))} height={140} preview="edit" />
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links.</p>
+                <p className="text-xs text-gray-400 mt-1">Os textos são justificados automaticamente no site. Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links. Não use tags HTML.</p>
               </div>
 
               {/* Formação Acadêmica */}
@@ -272,7 +272,7 @@ export default function AdminTeamPage() {
                 <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
                   <MDEditor value={form.academic_education || ''} onChange={(v) => setForm(f => ({...f, academic_education: (v || '').toString()}))} height={180} preview="edit" />
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links.</p>
+                <p className="text-xs text-gray-400 mt-1">Os textos são justificados automaticamente no site. Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links. Não use tags HTML.</p>
               </div>
 
               {/* Formação Complementar */}
@@ -281,7 +281,7 @@ export default function AdminTeamPage() {
                 <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
                   <MDEditor value={form.complementary_training || ''} onChange={(v) => setForm(f => ({...f, complementary_training: (v || '').toString()}))} height={180} preview="edit" />
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links.</p>
+                <p className="text-xs text-gray-400 mt-1">Os textos são justificados automaticamente no site. Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links. Não use tags HTML.</p>
               </div>
 
               {/* Experiência Profissional */}
@@ -290,7 +290,7 @@ export default function AdminTeamPage() {
                 <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
                   <MDEditor value={form.professional_experience || ''} onChange={(v) => setForm(f => ({...f, professional_experience: (v || '').toString()}))} height={180} preview="edit" />
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links.</p>
+                <p className="text-xs text-gray-400 mt-1">Os textos são justificados automaticamente no site. Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links. Não use tags HTML.</p>
               </div>
 
               {/* Currículo livre / observações internas */}
@@ -299,7 +299,7 @@ export default function AdminTeamPage() {
                 <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
                   <MDEditor value={form.curriculum || ''} onChange={(v) => setForm(f => ({...f, curriculum: (v || '').toString()}))} height={120} preview="edit" />
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links.</p>
+                <p className="text-xs text-gray-400 mt-1">Os textos são justificados automaticamente no site. Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links. Não use tags HTML.</p>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-700">

@@ -55,6 +55,18 @@ html {
   background: #555;
 }
 
+/* Justificar parágrafos do conteúdo Markdown da Equipe */
+.team-markdown p {
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+.team-markdown ul,
+.team-markdown ol,
+.team-markdown li {
+  text-align: left;
+}
+
 /* Toast animation */
 @keyframes slide-in {
   from {
