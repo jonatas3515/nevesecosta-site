@@ -55,16 +55,80 @@ html {
   background: #555;
 }
 
-/* Justificar parágrafos do conteúdo Markdown da Equipe */
+/* Tipografia do conteúdo Markdown da Equipe */
 .team-markdown p {
-  text-align: justify;
-  text-justify: inter-word;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  text-align: left;
+  margin-bottom: 0.75rem;
 }
 
+@media (min-width: 768px) {
+  .team-markdown p {
+    text-align: justify;
+    text-justify: inter-word;
+  }
+}
+
+.team-markdown h1,
+.team-markdown h2,
+.team-markdown h3,
+.team-markdown h4,
+.team-markdown h5,
+.team-markdown h6 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fbbf24;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.team-markdown h1 { font-size: 1.5rem; }
+.team-markdown h2 { font-size: 1.375rem; }
+.team-markdown h3 { font-size: 1.25rem; }
+
 .team-markdown ul,
-.team-markdown ol,
-.team-markdown li {
+.team-markdown ol {
+  font-size: 0.9375rem;
+  line-height: 1.55;
   text-align: left;
+  margin-bottom: 0.75rem;
+  padding-left: 1.25rem;
+}
+
+.team-markdown li {
+  margin-bottom: 0.25rem;
+}
+
+.team-markdown a {
+  color: #fbbf24;
+  text-decoration: underline;
+}
+
+.team-markdown a:hover {
+  color: #d97706;
+}
+
+.team-markdown blockquote {
+  border-left: 3px solid #fbbf24;
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+  color: #d1d5db;
+}
+
+.team-markdown pre {
+  background-color: #1f2937;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+}
+
+.team-markdown code {
+  background-color: #1f2937;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
 }
 
 /* Toast animation */

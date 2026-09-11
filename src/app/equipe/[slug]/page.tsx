@@ -32,7 +32,7 @@ type TeamMember = {
 }
 
 const md = new MarkdownIt({
-  html: false,
+  html: true,
   linkify: true,
   breaks: true,
 })
@@ -43,9 +43,14 @@ const allowedTeamTags = [
   'strong', 'b', 'em', 'i', 'u', 's', 'del',
   'ul', 'ol', 'li',
   'a',
+  'div', 'span',
+  'blockquote',
+  'pre', 'code',
+  'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
+  'img',
 ]
 
-const allowedTeamAttrs = ['href', 'title', 'target', 'rel']
+const allowedTeamAttrs = ['href', 'title', 'target', 'rel', 'src', 'alt', 'width', 'height', 'class']
 
 function renderMarkdown(text: string | null | undefined): string {
   if (!text) return ''
@@ -237,65 +242,55 @@ export default function TeamMemberPage({ params }: Props) {
             {/* Sobre */}
             {member.bio && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
-                <div className="text-center mb-6">
-                  <div className="flex justify-center mb-4">
-                    <Award size={32} className="text-gold-400" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gold-400 text-center">Sobre</h2>
+                <div className="flex items-center gap-3 mb-6">
+                  <Award size={28} className="text-gold-400" />
+                  <h2 className="text-2xl font-bold text-gold-400">Sobre</h2>
                 </div>
-                <div className="text-gray-300 leading-7 whitespace-pre-line text-center team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.bio) }} />
+                <div className="team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.bio) }} />
               </section>
             )}
 
             {/* Formação Acadêmica */}
             {member.academic_education && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
-                <div className="text-center mb-6">
-                  <div className="flex justify-center mb-4">
-                    <GraduationCap size={32} className="text-gold-400" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gold-400 text-center">Formação Acadêmica</h2>
+                <div className="flex items-center gap-3 mb-6">
+                  <GraduationCap size={28} className="text-gold-400" />
+                  <h2 className="text-2xl font-bold text-gold-400">Formação Acadêmica</h2>
                 </div>
-                <div className="text-gray-300 leading-7 whitespace-pre-line text-center team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.academic_education) }} />
+                <div className="team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.academic_education) }} />
               </section>
             )}
 
             {/* Formação Complementar Recente */}
             {member.complementary_training && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
-                <div className="text-center mb-6">
-                  <div className="flex justify-center mb-4">
-                    <BookOpen size={32} className="text-gold-400" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gold-400 text-center">Formação Complementar Recente</h2>
+                <div className="flex items-center gap-3 mb-6">
+                  <BookOpen size={28} className="text-gold-400" />
+                  <h2 className="text-2xl font-bold text-gold-400">Formação Complementar Recente</h2>
                 </div>
-                <div className="text-gray-300 leading-7 whitespace-pre-line text-center team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.complementary_training) }} />
+                <div className="team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.complementary_training) }} />
               </section>
             )}
 
             {/* Experiência Profissional */}
             {member.professional_experience && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
-                <div className="text-center mb-6">
-                  <div className="flex justify-center mb-4">
-                    <Briefcase size={32} className="text-gold-400" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gold-400 text-center">Experiência Profissional</h2>
+                <div className="flex items-center gap-3 mb-6">
+                  <Briefcase size={28} className="text-gold-400" />
+                  <h2 className="text-2xl font-bold text-gold-400">Experiência Profissional</h2>
                 </div>
-                <div className="text-gray-300 leading-7 whitespace-pre-line text-center team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.professional_experience) }} />
+                <div className="team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.professional_experience) }} />
               </section>
             )}
 
             {/* Áreas de Especialização */}
             {(member.specialties || []).length > 0 && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
-                <div className="text-center mb-6">
-                  <div className="flex justify-center mb-4">
-                    <Award size={32} className="text-gold-400" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-gold-400 text-center">Áreas de Especialização</h2>
+                <div className="flex items-center gap-3 mb-6">
+                  <Award size={28} className="text-gold-400" />
+                  <h2 className="text-2xl font-bold text-gold-400">Áreas de Especialização</h2>
                 </div>
-                <div className="flex flex-wrap justify-center gap-3">
+                <div className="flex flex-wrap gap-3">
                   {(member.specialties || []).map((specialty) => (
                     <span
                       key={specialty}
