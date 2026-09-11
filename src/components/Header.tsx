@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Menu, X } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient'
 import { getSiteContent } from '@/lib/siteContent'
 import type { NavItem, HeaderNavData } from '@/types/navigation'
 
@@ -51,6 +52,21 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [navItems, setNavItems] = useState<NavItem[]>(defaultNavItems)
   const [cta, setCta] = useState(defaultCta)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setIsLoggedIn(!!session?.user)
+    }
+    checkSession()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setIsLoggedIn(!!session?.user)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -87,9 +103,11 @@ export default function Header() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-black shadow-lg py-3'
-          : 'bg-black/80 backdrop-blur-sm py-4'
+        isLoggedIn
+          ? 'bg-red-700 shadow-lg py-3'
+          : isScrolled
+            ? 'bg-black shadow-lg py-3'
+            : 'bg-black/80 backdrop-blur-sm py-4'
       }`}
     >
       <div className="container mx-auto px-4">

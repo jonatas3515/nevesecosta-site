@@ -18,6 +18,10 @@ type TeamMember = {
   lattes_updated_at?: string | null
   email?: string | null
   social_media?: string | null
+  phone?: string | null
+  academic_education?: string | null
+  complementary_training?: string | null
+  professional_experience?: string | null
 }
 
 export default function AdminTeamPage() {
@@ -41,7 +45,11 @@ export default function AdminTeamPage() {
     lattes_url: "",
     lattes_updated_at: "",
     email: "",
-    social_media: ""
+    social_media: "",
+    phone: "",
+    academic_education: "",
+    complementary_training: "",
+    professional_experience: ""
   })
 
   useEffect(() => { load() }, [])
@@ -73,7 +81,11 @@ export default function AdminTeamPage() {
       lattes_url: "",
       lattes_updated_at: "",
       email: "",
-      social_media: ""
+      social_media: "",
+      phone: "",
+      academic_education: "",
+      complementary_training: "",
+      professional_experience: ""
     })
     setFile(null)
     setShowModal(true)
@@ -93,7 +105,11 @@ export default function AdminTeamPage() {
       lattes_url: m.lattes_url || "",
       lattes_updated_at: m.lattes_updated_at || "",
       email: m.email || "",
-      social_media: m.social_media || ""
+      social_media: m.social_media || "",
+      phone: m.phone || "",
+      academic_education: m.academic_education || "",
+      complementary_training: m.complementary_training || "",
+      professional_experience: m.professional_experience || ""
     })
     setFile(null)
     setShowModal(true)
@@ -210,6 +226,10 @@ export default function AdminTeamPage() {
                 <input type="email" value={form.email || ''} onChange={e => setForm(f => ({...f, email: e.target.value}))} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Ex: jonatascosta.adv@gmail.com" />
               </div>
               <div>
+                <label className="block text-sm text-gray-300 mb-1">Telefone profissional</label>
+                <input type="tel" value={form.phone || ''} onChange={e => setForm(f => ({...f, phone: e.target.value}))} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Ex: (73) 9 9934-8552" />
+              </div>
+              <div className="md:col-span-2">
                 <label className="block text-sm text-gray-300 mb-1">Redes Sociais</label>
                 <input value={form.social_media || ''} onChange={e => setForm(f => ({...f, social_media: e.target.value}))} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Ex: @jonatascosta.adv" />
               </div>
@@ -237,13 +257,31 @@ export default function AdminTeamPage() {
               {/* Bio */}
               <div className="md:col-span-2">
                 <label className="block text-sm text-gray-300 mb-1">Biografia/Resumo</label>
-                <textarea value={form.bio || ''} onChange={e => setForm(f => ({...f, bio: e.target.value}))} rows={4} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Breve descriÃ§Ã£o profissional..." />
+                <textarea value={form.bio || ''} onChange={e => setForm(f => ({...f, bio: e.target.value}))} rows={4} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Breve descrição profissional..." />
               </div>
 
-              {/* CurrÃ­culo */}
+              {/* Formação Acadêmica */}
               <div className="md:col-span-2">
-                <label className="block text-sm text-gray-300 mb-1">FormaÃ§Ã£o AcadÃªmica/TitulaÃ§Ã£o</label>
-                <textarea value={form.curriculum || ''} onChange={e => setForm(f => ({...f, curriculum: e.target.value}))} rows={10} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Liste a formaÃ§Ã£o acadÃªmica completa (use linhas em branco para separar cada item)..." />
+                <label className="block text-sm text-gray-300 mb-1">Formação Acadêmica</label>
+                <textarea value={form.academic_education || ''} onChange={e => setForm(f => ({...f, academic_education: e.target.value}))} rows={6} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Liste a formação acadêmica (use linhas em branco para separar cada item)..." />
+              </div>
+
+              {/* Formação Complementar */}
+              <div className="md:col-span-2">
+                <label className="block text-sm text-gray-300 mb-1">Formação Complementar Recente</label>
+                <textarea value={form.complementary_training || ''} onChange={e => setForm(f => ({...f, complementary_training: e.target.value}))} rows={6} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Cursos, aperfeiçoamentos e certificações recentes..." />
+              </div>
+
+              {/* Experiência Profissional */}
+              <div className="md:col-span-2">
+                <label className="block text-sm text-gray-300 mb-1">Experiência Profissional</label>
+                <textarea value={form.professional_experience || ''} onChange={e => setForm(f => ({...f, professional_experience: e.target.value}))} rows={6} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Histórico profissional e atuações..." />
+              </div>
+
+              {/* Currículo livre / observações internas */}
+              <div className="md:col-span-2">
+                <label className="block text-sm text-gray-300 mb-1">Currículo livre / observações internas (opcional)</label>
+                <textarea value={form.curriculum || ''} onChange={e => setForm(f => ({...f, curriculum: e.target.value}))} rows={4} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Campo livre para anotações internas. Não aparece no site público." />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-700">

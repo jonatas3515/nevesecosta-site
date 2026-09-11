@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Mail, GraduationCap, User, AtSign, Calendar, Award } from 'lucide-react'
+import { ArrowLeft, Mail, GraduationCap, User, AtSign, Calendar, Award, Phone, BookOpen, Briefcase } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
@@ -22,6 +22,10 @@ type TeamMember = {
   lattes_updated_at?: string | null
   email?: string | null
   social_media?: string | null
+  phone?: string | null
+  academic_education?: string | null
+  complementary_training?: string | null
+  professional_experience?: string | null
   updated_at?: string | null
 }
 
@@ -159,7 +163,7 @@ export default function TeamMemberPage({ params }: Props) {
               )}
 
               {/* Contato */}
-              {(member.email || member.social_media) && (
+              {(member.email || member.phone || member.social_media) && (
                 <div className="border-t border-gold-500/20 pt-4 mt-4 space-y-2">
                   {member.email && (
                     <a
@@ -168,6 +172,17 @@ export default function TeamMemberPage({ params }: Props) {
                     >
                       <Mail size={16} className="text-gold-500" />
                       {member.email}
+                    </a>
+                  )}
+                  {member.phone && (
+                    <a
+                      href={`https://wa.me/${member.phone.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-gray-300 hover:text-gold-400 transition-colors text-sm"
+                    >
+                      <Phone size={16} className="text-gold-500" />
+                      {member.phone}
                     </a>
                   )}
                   {member.social_media && (
@@ -183,7 +198,7 @@ export default function TeamMemberPage({ params }: Props) {
 
           {/* Coluna Direita: Conteúdo do Currículo */}
           <div className="md:col-span-2 space-y-8">
-            {/* Card 1: Sobre (Biografia/Resumo) */}
+            {/* Sobre */}
             {member.bio && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
                 <div className="text-center mb-6">
@@ -198,22 +213,52 @@ export default function TeamMemberPage({ params }: Props) {
               </section>
             )}
 
-            {/* Card 2: Formação Acadêmica/Titulação */}
-            {member.curriculum && (
+            {/* Formação Acadêmica */}
+            {member.academic_education && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
                 <div className="text-center mb-6">
                   <div className="flex justify-center mb-4">
                     <GraduationCap size={32} className="text-gold-400" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gold-400 text-center">Formação Acadêmica/Titulação</h2>
+                  <h2 className="text-2xl font-bold text-gold-400 text-center">Formação Acadêmica</h2>
                 </div>
                 <div className="text-gray-300 leading-7 whitespace-pre-line text-center">
-                  {member.curriculum}
+                  {member.academic_education}
                 </div>
               </section>
             )}
 
-            {/* Card 3: Áreas de Especialização */}
+            {/* Formação Complementar Recente */}
+            {member.complementary_training && (
+              <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
+                <div className="text-center mb-6">
+                  <div className="flex justify-center mb-4">
+                    <BookOpen size={32} className="text-gold-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gold-400 text-center">Formação Complementar Recente</h2>
+                </div>
+                <div className="text-gray-300 leading-7 whitespace-pre-line text-center">
+                  {member.complementary_training}
+                </div>
+              </section>
+            )}
+
+            {/* Experiência Profissional */}
+            {member.professional_experience && (
+              <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
+                <div className="text-center mb-6">
+                  <div className="flex justify-center mb-4">
+                    <Briefcase size={32} className="text-gold-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gold-400 text-center">Experiência Profissional</h2>
+                </div>
+                <div className="text-gray-300 leading-7 whitespace-pre-line text-center">
+                  {member.professional_experience}
+                </div>
+              </section>
+            )}
+
+            {/* Áreas de Especialização */}
             {(member.specialties || []).length > 0 && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
                 <div className="text-center mb-6">
