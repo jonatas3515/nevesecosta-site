@@ -27,6 +27,16 @@ type TeamMember = {
   professional_experience?: string | null
 }
 
+type ComplementaryBlockInput = {
+  id?: string
+  category_title: string
+  courses_text: string
+  title_color: string
+  text_color: string
+  text_align: 'left' | 'center' | 'justify'
+  sort_order: number
+}
+
 export default function AdminTeamPage() {
   const [loading, setLoading] = useState(true)
   const [members, setMembers] = useState<TeamMember[]>([])
@@ -35,8 +45,9 @@ export default function AdminTeamPage() {
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
+  const [complementaryBlocks, setComplementaryBlocks] = useState<ComplementaryBlockInput[]>([])
 
-  const [form, setForm] = useState<Omit<TeamMember, "id">>({
+  const [form, setForm] = useState<Omit<TeamMember, "id" | "complementary_training">>({
     slug: "",
     name: "",
     oab: "",
@@ -51,7 +62,6 @@ export default function AdminTeamPage() {
     social_media: "",
     phone: "",
     academic_education: "",
-    complementary_training: "",
     professional_experience: ""
   })
 
@@ -87,14 +97,14 @@ export default function AdminTeamPage() {
       social_media: "",
       phone: "",
       academic_education: "",
-      complementary_training: "",
       professional_experience: ""
     })
+    setComplementaryBlocks([])
     setFile(null)
     setShowModal(true)
   }
 
-  const openEdit = (m: TeamMember) => {
+  const openEdit = async (m: TeamMember) => {
     setEditing(m)
     setForm({
       slug: m.slug,
@@ -111,10 +121,31 @@ export default function AdminTeamPage() {
       social_media: m.social_media || "",
       phone: m.phone || "",
       academic_education: m.academic_education || "",
-      complementary_training: m.complementary_training || "",
       professional_experience: m.professional_experience || ""
     })
     setFile(null)
+    setComplementaryBlocks([])
+    try {
+      const { data, error } = await supabase
+        .from("team_complementary_blocks")
+        .select("*")
+        .eq("member_id", m.id)
+        .order("sort_order", { ascending: true })
+      if (error) throw error
+      if (data) {
+        setComplementaryBlocks(data.map((b: any) => ({
+          id: b.id,
+          category_title: b.category_title,
+          courses_text: b.courses_text,
+          title_color: b.title_color,
+          text_color: b.text_color,
+          text_align: b.text_align,
+          sort_order: b.sort_order
+        })))
+      }
+    } catch (e: any) {
+      console.error("[AdminTeam] load blocks error", e)
+    }
     setShowModal(true)
   }
 
@@ -133,14 +164,37 @@ export default function AdminTeamPage() {
     setSaving(true)
     try {
       const photo_url = await handleUpload()
+      const memberId = editing ? editing.id : uuidv4()
       const payload = { ...form, photo_url, specialties: form.specialties && Array.isArray(form.specialties) ? form.specialties : [] }
       if (editing) {
-        const { error } = await supabase.from("team_members").update(payload).eq("id", editing.id)
+        const { error } = await supabase.from("team_members").update(payload).eq("id", memberId)
         if (error) throw error
       } else {
-        const { error } = await supabase.from("team_members").insert([{ id: uuidv4(), ...payload }])
+        const { error } = await supabase.from("team_members").insert([{ id: memberId, ...payload }])
         if (error) throw error
       }
+
+      const validBlocks = complementaryBlocks
+        .filter(b => b.category_title.trim() || b.courses_text.trim())
+        .slice(0, 10)
+        .map((b, idx) => ({
+          member_id: memberId,
+          category_title: b.category_title.trim(),
+          courses_text: b.courses_text.trim(),
+          title_color: b.title_color,
+          text_color: b.text_color,
+          text_align: b.text_align,
+          sort_order: b.sort_order ?? idx
+        }))
+
+      const { error: delError } = await supabase.from("team_complementary_blocks").delete().eq("member_id", memberId)
+      if (delError) throw delError
+
+      if (validBlocks.length > 0) {
+        const { error: insError } = await supabase.from("team_complementary_blocks").insert(validBlocks)
+        if (insError) throw insError
+      }
+
       setShowModal(false)
       await load()
     } catch (e: any) {
@@ -158,6 +212,26 @@ export default function AdminTeamPage() {
     } catch (e: any) {
       alert("Erro ao excluir: " + (e?.message || String(e)))
     } finally { setDeletingId(null) }
+  }
+
+  const addComplementaryBlock = () => {
+    if (complementaryBlocks.length >= 10) return
+    setComplementaryBlocks(prev => [...prev, {
+      category_title: "",
+      courses_text: "",
+      title_color: "#fbbf24",
+      text_color: "#e2e8f0",
+      text_align: 'left',
+      sort_order: prev.length
+    }])
+  }
+
+  const updateComplementaryBlock = (index: number, patch: Partial<ComplementaryBlockInput>) => {
+    setComplementaryBlocks(prev => prev.map((b, i) => i === index ? { ...b, ...patch } : b))
+  }
+
+  const removeComplementaryBlock = (index: number) => {
+    setComplementaryBlocks(prev => prev.filter((_, i) => i !== index))
   }
 
   const toSlug = (s: string) => s.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -275,13 +349,98 @@ export default function AdminTeamPage() {
                 <p className="text-xs text-gray-400 mt-1">Os textos são justificados automaticamente no site. Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links. Não use tags HTML.</p>
               </div>
 
-              {/* Formação Complementar */}
-              <div className="md:col-span-2">
-                <label className="block text-sm text-gray-300 mb-1">Formação Complementar Recente</label>
-                <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
-                  <MDEditor value={form.complementary_training || ''} onChange={(v) => setForm(f => ({...f, complementary_training: (v || '').toString()}))} height={180} preview="edit" />
+              {/* Formação Complementar — Blocos Estruturados */}
+              <div className="md:col-span-2 border-t border-gray-700 pt-4 mt-2">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm text-gray-300">Formação Complementar</label>
+                  <button
+                    type="button"
+                    onClick={addComplementaryBlock}
+                    disabled={complementaryBlocks.length >= 10}
+                    className="px-3 py-1.5 text-xs bg-gold-500 text-gray-900 rounded-md hover:bg-gold-400 disabled:bg-gray-600 disabled:text-gray-300"
+                  >
+                    Adicionar Bloco ({complementaryBlocks.length}/10)
+                  </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Os textos são justificados automaticamente no site. Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links. Não use tags HTML.</p>
+                <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
+                  {complementaryBlocks.map((block, index) => (
+                    <div key={block.id || `block-${index}`} className="bg-gray-800 rounded-lg p-4 border border-gray-600 space-y-3">
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-gray-400 mb-1">Título da Categoria</label>
+                          <input
+                            value={block.category_title}
+                            onChange={e => updateComplementaryBlock(index, { category_title: e.target.value })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                            placeholder="Ex: Cibersegurança"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-gray-400 mb-1">Itens/Cursos (um por linha)</label>
+                          <textarea
+                            value={block.courses_text}
+                            onChange={e => updateComplementaryBlock(index, { courses_text: e.target.value })}
+                            rows={4}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                            placeholder="Ex: Programa Hackers do Bem - 96h"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Cor do Título</label>
+                          <input
+                            type="color"
+                            value={block.title_color}
+                            onChange={e => updateComplementaryBlock(index, { title_color: e.target.value })}
+                            className="w-full h-10 rounded-md bg-gray-700 border border-gray-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Cor do Texto</label>
+                          <input
+                            type="color"
+                            value={block.text_color}
+                            onChange={e => updateComplementaryBlock(index, { text_color: e.target.value })}
+                            className="w-full h-10 rounded-md bg-gray-700 border border-gray-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Alinhamento</label>
+                          <select
+                            value={block.text_align}
+                            onChange={e => updateComplementaryBlock(index, { text_align: e.target.value as 'left' | 'center' | 'justify' })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                          >
+                            <option value="left">Esquerda</option>
+                            <option value="center">Centro</option>
+                            <option value="justify">Justificado</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Ordem</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={block.sort_order}
+                            onChange={e => updateComplementaryBlock(index, { sort_order: parseInt(e.target.value || '0', 10) })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => removeComplementaryBlock(index)}
+                          className="px-3 py-1 text-xs bg-red-500/20 text-red-300 border border-red-500/30 rounded-md hover:bg-red-500/30"
+                        >
+                          Remover Bloco
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {complementaryBlocks.length === 0 && (
+                    <p className="text-sm text-gray-400">Nenhum bloco cadastrado. Clique em "Adicionar Bloco" para começar.</p>
+                  )}
+                </div>
               </div>
 
               {/* Experiência Profissional */}

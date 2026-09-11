@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'isomorphic-dompurify'
+import { TeamComplementaryBlock } from '@/types'
 
 interface Props { params: { slug: string } }
 
@@ -83,6 +84,7 @@ function formatDate(dateStr: string | null | undefined): string {
 export default function TeamMemberPage({ params }: Props) {
   const { slug } = params
   const [member, setMember] = useState<TeamMember | null>(null)
+  const [complementaryBlocks, setComplementaryBlocks] = useState<TeamComplementaryBlock[]>([])
   const [loading, setLoading] = useState(true)
 
   const load = async () => {
@@ -95,9 +97,22 @@ export default function TeamMemberPage({ params }: Props) {
         .maybeSingle()
       if (error) throw error
       setMember(data as TeamMember | null)
+
+      if (data) {
+        const { data: blocks, error: blocksError } = await supabase
+          .from('team_complementary_blocks')
+          .select('*')
+          .eq('member_id', data.id)
+          .order('sort_order', { ascending: true })
+        if (blocksError) throw blocksError
+        setComplementaryBlocks((blocks || []) as TeamComplementaryBlock[])
+      } else {
+        setComplementaryBlocks([])
+      }
     } catch (e) {
       console.error('[TeamMember] load error', e)
       setMember(null)
+      setComplementaryBlocks([])
     } finally {
       setLoading(false)
     }
@@ -261,14 +276,36 @@ export default function TeamMemberPage({ params }: Props) {
               </section>
             )}
 
-            {/* Formação Complementar Recente */}
-            {member.complementary_training && (
+            {/* Formação Complementar */}
+            {complementaryBlocks.length > 0 && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
                 <div className="flex items-center gap-3 mb-6">
                   <BookOpen size={28} className="text-gold-400" />
-                  <h2 className="text-2xl font-bold text-gold-400">Formação Complementar Recente</h2>
+                  <h2 className="text-2xl font-bold text-gold-400">Formação Complementar</h2>
                 </div>
-                <div className="team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.complementary_training) }} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {complementaryBlocks.map((block) => (
+                    <div
+                      key={block.id}
+                      className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50"
+                    >
+                      <h3
+                        className="text-lg font-semibold mb-3"
+                        style={{ color: block.title_color }}
+                      >
+                        {block.category_title}
+                      </h3>
+                      <div
+                        className="space-y-1 text-sm whitespace-pre-line"
+                        style={{ color: block.text_color, textAlign: block.text_align }}
+                      >
+                        {block.courses_text.split('\n').filter(line => line.trim()).map((line, i) => (
+                          <p key={i} className="leading-relaxed">{line.trim()}</p>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </section>
             )}
 
