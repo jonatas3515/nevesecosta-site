@@ -1,8 +1,11 @@
 ﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
+import dynamic from "next/dynamic"
 import { supabase } from "@/lib/supabaseClient"
 import { v4 as uuidv4 } from "uuid"
+
+const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false })
 
 type TeamMember = {
   id: string
@@ -257,31 +260,46 @@ export default function AdminTeamPage() {
               {/* Bio */}
               <div className="md:col-span-2">
                 <label className="block text-sm text-gray-300 mb-1">Biografia/Resumo</label>
-                <textarea value={form.bio || ''} onChange={e => setForm(f => ({...f, bio: e.target.value}))} rows={4} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Breve descrição profissional..." />
+                <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
+                  <MDEditor value={form.bio || ''} onChange={(v) => setForm(f => ({...f, bio: (v || '').toString()}))} height={140} preview="edit" />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links.</p>
               </div>
 
               {/* Formação Acadêmica */}
               <div className="md:col-span-2">
                 <label className="block text-sm text-gray-300 mb-1">Formação Acadêmica</label>
-                <textarea value={form.academic_education || ''} onChange={e => setForm(f => ({...f, academic_education: e.target.value}))} rows={6} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Liste a formação acadêmica (use linhas em branco para separar cada item)..." />
+                <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
+                  <MDEditor value={form.academic_education || ''} onChange={(v) => setForm(f => ({...f, academic_education: (v || '').toString()}))} height={180} preview="edit" />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links.</p>
               </div>
 
               {/* Formação Complementar */}
               <div className="md:col-span-2">
                 <label className="block text-sm text-gray-300 mb-1">Formação Complementar Recente</label>
-                <textarea value={form.complementary_training || ''} onChange={e => setForm(f => ({...f, complementary_training: e.target.value}))} rows={6} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Cursos, aperfeiçoamentos e certificações recentes..." />
+                <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
+                  <MDEditor value={form.complementary_training || ''} onChange={(v) => setForm(f => ({...f, complementary_training: (v || '').toString()}))} height={180} preview="edit" />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links.</p>
               </div>
 
               {/* Experiência Profissional */}
               <div className="md:col-span-2">
                 <label className="block text-sm text-gray-300 mb-1">Experiência Profissional</label>
-                <textarea value={form.professional_experience || ''} onChange={e => setForm(f => ({...f, professional_experience: e.target.value}))} rows={6} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Histórico profissional e atuações..." />
+                <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
+                  <MDEditor value={form.professional_experience || ''} onChange={(v) => setForm(f => ({...f, professional_experience: (v || '').toString()}))} height={180} preview="edit" />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links.</p>
               </div>
 
               {/* Currículo livre / observações internas */}
               <div className="md:col-span-2">
                 <label className="block text-sm text-gray-300 mb-1">Currículo livre / observações internas (opcional)</label>
-                <textarea value={form.curriculum || ''} onChange={e => setForm(f => ({...f, curriculum: e.target.value}))} rows={4} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Campo livre para anotações internas. Não aparece no site público." />
+                <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
+                  <MDEditor value={form.curriculum || ''} onChange={(v) => setForm(f => ({...f, curriculum: (v || '').toString()}))} height={120} preview="edit" />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links.</p>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-700">

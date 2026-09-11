@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ArrowLeft, Mail, GraduationCap, User, AtSign, Calendar, Award, Phone, BookOpen, Briefcase } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import MarkdownIt from 'markdown-it'
+import DOMPurify from 'isomorphic-dompurify'
 
 interface Props { params: { slug: string } }
 
@@ -27,6 +29,40 @@ type TeamMember = {
   complementary_training?: string | null
   professional_experience?: string | null
   updated_at?: string | null
+}
+
+const md = new MarkdownIt({
+  html: false,
+  linkify: true,
+  breaks: true,
+})
+
+const allowedTeamTags = [
+  'p', 'br', 'hr',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'strong', 'b', 'em', 'i', 'u', 's', 'del',
+  'ul', 'ol', 'li',
+  'a',
+]
+
+const allowedTeamAttrs = ['href', 'title', 'target', 'rel']
+
+function renderMarkdown(text: string | null | undefined): string {
+  if (!text) return ''
+  const raw = md.render(text)
+  let clean = DOMPurify.sanitize(raw, {
+    ALLOWED_TAGS: allowedTeamTags,
+    ALLOWED_ATTR: allowedTeamAttrs,
+    ALLOW_DATA_ATTR: false,
+  })
+  clean = clean.replace(
+    /<a\s+([^>]*?)target="_blank"([^>]*?)>/gi,
+    (match, before, after) => {
+      if (/rel=["']/.test(match)) return match
+      return `<a ${before}target="_blank" rel="noopener noreferrer"${after}>`
+    }
+  )
+  return clean
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -151,7 +187,7 @@ export default function TeamMemberPage({ params }: Props) {
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 bg-gold-500/10 hover:bg-gold-500/20 text-gold-400 hover:text-gold-300 px-4 py-3 rounded-lg transition-colors w-full"
                   >
-                    <Image src="/Lattes.png" alt="Lattes" width={140} height={40} className="h-8 w-auto" />
+                    <Image src="/Lattes.png" alt="Lattes" width={180} height={48} className="h-10 w-auto" />
                   </a>
                   {member.lattes_updated_at && (
                     <p className="text-xs text-gray-500 text-center mt-2 flex items-center justify-center gap-1">
@@ -207,9 +243,7 @@ export default function TeamMemberPage({ params }: Props) {
                   </div>
                   <h2 className="text-2xl font-bold text-gold-400 text-center">Sobre</h2>
                 </div>
-                <p className="text-gray-300 leading-7 whitespace-pre-line text-center">
-                  {member.bio}
-                </p>
+                <div className="text-gray-300 leading-7 whitespace-pre-line text-center team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.bio) }} />
               </section>
             )}
 
@@ -222,9 +256,7 @@ export default function TeamMemberPage({ params }: Props) {
                   </div>
                   <h2 className="text-2xl font-bold text-gold-400 text-center">Formação Acadêmica</h2>
                 </div>
-                <div className="text-gray-300 leading-7 whitespace-pre-line text-center">
-                  {member.academic_education}
-                </div>
+                <div className="text-gray-300 leading-7 whitespace-pre-line text-center team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.academic_education) }} />
               </section>
             )}
 
@@ -237,9 +269,7 @@ export default function TeamMemberPage({ params }: Props) {
                   </div>
                   <h2 className="text-2xl font-bold text-gold-400 text-center">Formação Complementar Recente</h2>
                 </div>
-                <div className="text-gray-300 leading-7 whitespace-pre-line text-center">
-                  {member.complementary_training}
-                </div>
+                <div className="text-gray-300 leading-7 whitespace-pre-line text-center team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.complementary_training) }} />
               </section>
             )}
 
@@ -252,9 +282,7 @@ export default function TeamMemberPage({ params }: Props) {
                   </div>
                   <h2 className="text-2xl font-bold text-gold-400 text-center">Experiência Profissional</h2>
                 </div>
-                <div className="text-gray-300 leading-7 whitespace-pre-line text-center">
-                  {member.professional_experience}
-                </div>
+                <div className="text-gray-300 leading-7 whitespace-pre-line text-center team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.professional_experience) }} />
               </section>
             )}
 
