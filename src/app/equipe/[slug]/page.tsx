@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'isomorphic-dompurify'
-import { TeamComplementaryBlock } from '@/types'
+import { TeamComplementaryBlock, TeamAcademicEducation, TeamProfessionalExperience, TeamSpecializationArea } from '@/types'
 
 interface Props { params: { slug: string } }
 
@@ -85,6 +85,9 @@ export default function TeamMemberPage({ params }: Props) {
   const { slug } = params
   const [member, setMember] = useState<TeamMember | null>(null)
   const [complementaryBlocks, setComplementaryBlocks] = useState<TeamComplementaryBlock[]>([])
+  const [academicBlocks, setAcademicBlocks] = useState<TeamAcademicEducation[]>([])
+  const [experienceBlocks, setExperienceBlocks] = useState<TeamProfessionalExperience[]>([])
+  const [specializationBlocks, setSpecializationBlocks] = useState<TeamSpecializationArea[]>([])
   const [loading, setLoading] = useState(true)
 
   const load = async () => {
@@ -99,20 +102,38 @@ export default function TeamMemberPage({ params }: Props) {
       setMember(data as TeamMember | null)
 
       if (data) {
-        const { data: blocks, error: blocksError } = await supabase
-          .from('team_complementary_blocks')
-          .select('*')
-          .eq('member_id', data.id)
-          .order('sort_order', { ascending: true })
-        if (blocksError) throw blocksError
-        setComplementaryBlocks((blocks || []) as TeamComplementaryBlock[])
+        const [
+          { data: compBlocks, error: compError },
+          { data: acadBlocks, error: acadError },
+          { data: expBlocks, error: expError },
+          { data: specBlocks, error: specError },
+        ] = await Promise.all([
+          supabase.from('team_complementary_blocks').select('*').eq('member_id', data.id).order('sort_order', { ascending: true }),
+          supabase.from('team_academic_education').select('*').eq('member_id', data.id).order('sort_order', { ascending: true }),
+          supabase.from('team_professional_experience').select('*').eq('member_id', data.id).order('sort_order', { ascending: true }),
+          supabase.from('team_specialization_areas').select('*').eq('member_id', data.id).order('sort_order', { ascending: true }),
+        ])
+        if (compError) throw compError
+        if (acadError) throw acadError
+        if (expError) throw expError
+        if (specError) throw specError
+        setComplementaryBlocks((compBlocks || []) as TeamComplementaryBlock[])
+        setAcademicBlocks((acadBlocks || []) as TeamAcademicEducation[])
+        setExperienceBlocks((expBlocks || []) as TeamProfessionalExperience[])
+        setSpecializationBlocks((specBlocks || []) as TeamSpecializationArea[])
       } else {
         setComplementaryBlocks([])
+        setAcademicBlocks([])
+        setExperienceBlocks([])
+        setSpecializationBlocks([])
       }
     } catch (e) {
       console.error('[TeamMember] load error', e)
       setMember(null)
       setComplementaryBlocks([])
+      setAcademicBlocks([])
+      setExperienceBlocks([])
+      setSpecializationBlocks([])
     } finally {
       setLoading(false)
     }
@@ -266,13 +287,27 @@ export default function TeamMemberPage({ params }: Props) {
             )}
 
             {/* Formação Acadêmica */}
-            {member.academic_education && (
+            {academicBlocks.length > 0 && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
                 <div className="flex items-center gap-3 mb-6">
                   <GraduationCap size={28} className="text-gold-400" />
                   <h2 className="text-2xl font-bold text-gold-400">Formação Acadêmica</h2>
                 </div>
-                <div className="team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.academic_education) }} />
+                <div className="space-y-4">
+                  {academicBlocks.map((item) => (
+                    <div
+                      key={item.id}
+                      className="border-l-2 border-amber-500 pl-4 py-2"
+                    >
+                      <div className="font-bold text-base text-white">{item.course_name}</div>
+                      <div className="text-xs text-slate-400">{item.period}</div>
+                      <div className="text-sm text-slate-300">{item.institution}</div>
+                      {item.thesis_title && (
+                        <div className="text-sm text-slate-400 mt-1">Título: {item.thesis_title}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </section>
             )}
 
@@ -310,31 +345,51 @@ export default function TeamMemberPage({ params }: Props) {
             )}
 
             {/* Experiência Profissional */}
-            {member.professional_experience && (
+            {experienceBlocks.length > 0 && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
                 <div className="flex items-center gap-3 mb-6">
                   <Briefcase size={28} className="text-gold-400" />
                   <h2 className="text-2xl font-bold text-gold-400">Experiência Profissional</h2>
                 </div>
-                <div className="team-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(member.professional_experience) }} />
+                <div className="flex flex-col gap-4">
+                  {experienceBlocks.map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4"
+                    >
+                      <div className="font-bold text-gold-400 text-lg">{item.role_title}</div>
+                      <div className="text-xs text-slate-400 mb-2">{item.period}</div>
+                      <p className="text-sm text-slate-300 whitespace-pre-line">{item.description}</p>
+                    </div>
+                  ))}
+                </div>
               </section>
             )}
 
             {/* Áreas de Especialização */}
-            {(member.specialties || []).length > 0 && (
+            {specializationBlocks.length > 0 && (
               <section className="bg-gray-900 rounded-2xl p-6 lg:p-8 border border-gold-500/20">
                 <div className="flex items-center gap-3 mb-6">
                   <Award size={28} className="text-gold-400" />
                   <h2 className="text-2xl font-bold text-gold-400">Áreas de Especialização</h2>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  {(member.specialties || []).map((specialty) => (
-                    <span
-                      key={specialty}
-                      className="bg-gold-500/20 text-gold-400 px-4 py-2 rounded-full border border-gold-500/30 font-medium"
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {specializationBlocks.slice(0, 3).map((block) => (
+                    <div
+                      key={block.id}
+                      className="bg-slate-800/60 rounded-lg p-4 border border-slate-700/50"
                     >
-                      {specialty}
-                    </span>
+                      <h3 className="text-lg font-semibold text-gold-400 mb-3">{block.area_title}</h3>
+                      <ul className="list-disc list-inside text-sm text-slate-300 space-y-1">
+                        {block.topics_list
+                          .split(/\n|,/)
+                          .map(t => t.trim())
+                          .filter(Boolean)
+                          .map((topic, i) => (
+                            <li key={i}>{topic}</li>
+                          ))}
+                      </ul>
+                    </div>
                   ))}
                 </div>
               </section>

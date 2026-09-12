@@ -37,6 +37,30 @@ type ComplementaryBlockInput = {
   sort_order: number
 }
 
+type AcademicInput = {
+  id?: string
+  course_name: string
+  period: string
+  institution: string
+  thesis_title: string
+  sort_order: number
+}
+
+type ExperienceInput = {
+  id?: string
+  role_title: string
+  period: string
+  description: string
+  sort_order: number
+}
+
+type SpecializationInput = {
+  id?: string
+  area_title: string
+  topics_list: string
+  sort_order: number
+}
+
 export default function AdminTeamPage() {
   const [loading, setLoading] = useState(true)
   const [members, setMembers] = useState<TeamMember[]>([])
@@ -46,13 +70,15 @@ export default function AdminTeamPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [complementaryBlocks, setComplementaryBlocks] = useState<ComplementaryBlockInput[]>([])
+  const [academicBlocks, setAcademicBlocks] = useState<AcademicInput[]>([])
+  const [experienceBlocks, setExperienceBlocks] = useState<ExperienceInput[]>([])
+  const [specializationBlocks, setSpecializationBlocks] = useState<SpecializationInput[]>([])
 
-  const [form, setForm] = useState<Omit<TeamMember, "id" | "complementary_training">>({
+  const [form, setForm] = useState<Omit<TeamMember, "id" | "complementary_training" | "academic_education" | "professional_experience">>({
     slug: "",
     name: "",
     oab: "",
     photo_url: "",
-    specialties: [],
     bio: "",
     curriculum: "",
     lattes_id: "",
@@ -60,9 +86,7 @@ export default function AdminTeamPage() {
     lattes_updated_at: "",
     email: "",
     social_media: "",
-    phone: "",
-    academic_education: "",
-    professional_experience: ""
+    phone: ""
   })
 
   useEffect(() => { load() }, [])
@@ -87,7 +111,6 @@ export default function AdminTeamPage() {
       name: "",
       oab: "",
       photo_url: "",
-      specialties: [],
       bio: "",
       curriculum: "",
       lattes_id: "",
@@ -95,11 +118,12 @@ export default function AdminTeamPage() {
       lattes_updated_at: "",
       email: "",
       social_media: "",
-      phone: "",
-      academic_education: "",
-      professional_experience: ""
+      phone: ""
     })
     setComplementaryBlocks([])
+    setAcademicBlocks([])
+    setExperienceBlocks([])
+    setSpecializationBlocks([])
     setFile(null)
     setShowModal(true)
   }
@@ -111,7 +135,6 @@ export default function AdminTeamPage() {
       name: m.name,
       oab: m.oab || "",
       photo_url: m.photo_url || "",
-      specialties: m.specialties || [],
       bio: m.bio || "",
       curriculum: m.curriculum || "",
       lattes_id: m.lattes_id || "",
@@ -119,27 +142,55 @@ export default function AdminTeamPage() {
       lattes_updated_at: m.lattes_updated_at || "",
       email: m.email || "",
       social_media: m.social_media || "",
-      phone: m.phone || "",
-      academic_education: m.academic_education || "",
-      professional_experience: m.professional_experience || ""
+      phone: m.phone || ""
     })
     setFile(null)
     setComplementaryBlocks([])
+    setAcademicBlocks([])
+    setExperienceBlocks([])
+    setSpecializationBlocks([])
     try {
-      const { data, error } = await supabase
-        .from("team_complementary_blocks")
-        .select("*")
-        .eq("member_id", m.id)
-        .order("sort_order", { ascending: true })
-      if (error) throw error
-      if (data) {
-        setComplementaryBlocks(data.map((b: any) => ({
+      const [{ data: compData }, { data: acadData }, { data: expData }, { data: specData }] = await Promise.all([
+        supabase.from("team_complementary_blocks").select("*").eq("member_id", m.id).order("sort_order", { ascending: true }),
+        supabase.from("team_academic_education").select("*").eq("member_id", m.id).order("sort_order", { ascending: true }),
+        supabase.from("team_professional_experience").select("*").eq("member_id", m.id).order("sort_order", { ascending: true }),
+        supabase.from("team_specialization_areas").select("*").eq("member_id", m.id).order("sort_order", { ascending: true })
+      ])
+      if (compData) {
+        setComplementaryBlocks(compData.map((b: any) => ({
           id: b.id,
           category_title: b.category_title,
           courses_text: b.courses_text,
           title_color: b.title_color,
           text_color: b.text_color,
           text_align: b.text_align,
+          sort_order: b.sort_order
+        })))
+      }
+      if (acadData) {
+        setAcademicBlocks(acadData.map((b: any) => ({
+          id: b.id,
+          course_name: b.course_name,
+          period: b.period,
+          institution: b.institution,
+          thesis_title: b.thesis_title || "",
+          sort_order: b.sort_order
+        })))
+      }
+      if (expData) {
+        setExperienceBlocks(expData.map((b: any) => ({
+          id: b.id,
+          role_title: b.role_title,
+          period: b.period,
+          description: b.description,
+          sort_order: b.sort_order
+        })))
+      }
+      if (specData) {
+        setSpecializationBlocks(specData.map((b: any) => ({
+          id: b.id,
+          area_title: b.area_title,
+          topics_list: b.topics_list,
           sort_order: b.sort_order
         })))
       }
@@ -174,7 +225,7 @@ export default function AdminTeamPage() {
         if (error) throw error
       }
 
-      const validBlocks = complementaryBlocks
+      const validComplementary = complementaryBlocks
         .filter(b => b.category_title.trim() || b.courses_text.trim())
         .slice(0, 10)
         .map((b, idx) => ({
@@ -187,12 +238,61 @@ export default function AdminTeamPage() {
           sort_order: b.sort_order ?? idx
         }))
 
-      const { error: delError } = await supabase.from("team_complementary_blocks").delete().eq("member_id", memberId)
-      if (delError) throw delError
+      const validAcademic = academicBlocks
+        .filter(b => b.course_name.trim() || b.institution.trim())
+        .slice(0, 10)
+        .map((b, idx) => ({
+          member_id: memberId,
+          course_name: b.course_name.trim(),
+          period: b.period.trim(),
+          institution: b.institution.trim(),
+          thesis_title: b.thesis_title.trim() || null,
+          sort_order: b.sort_order ?? idx
+        }))
 
-      if (validBlocks.length > 0) {
-        const { error: insError } = await supabase.from("team_complementary_blocks").insert(validBlocks)
-        if (insError) throw insError
+      const validExperience = experienceBlocks
+        .filter(b => b.role_title.trim() || b.description.trim())
+        .slice(0, 10)
+        .map((b, idx) => ({
+          member_id: memberId,
+          role_title: b.role_title.trim(),
+          period: b.period.trim(),
+          description: b.description.trim(),
+          sort_order: b.sort_order ?? idx
+        }))
+
+      const validSpecialization = specializationBlocks
+        .filter(b => b.area_title.trim() || b.topics_list.trim())
+        .slice(0, 3)
+        .map((b, idx) => ({
+          member_id: memberId,
+          area_title: b.area_title.trim(),
+          topics_list: b.topics_list.trim(),
+          sort_order: b.sort_order ?? idx
+        }))
+
+      await supabase.from("team_complementary_blocks").delete().eq("member_id", memberId)
+      if (validComplementary.length > 0) {
+        const { error: cErr } = await supabase.from("team_complementary_blocks").insert(validComplementary)
+        if (cErr) throw cErr
+      }
+
+      await supabase.from("team_academic_education").delete().eq("member_id", memberId)
+      if (validAcademic.length > 0) {
+        const { error: aErr } = await supabase.from("team_academic_education").insert(validAcademic)
+        if (aErr) throw aErr
+      }
+
+      await supabase.from("team_professional_experience").delete().eq("member_id", memberId)
+      if (validExperience.length > 0) {
+        const { error: eErr } = await supabase.from("team_professional_experience").insert(validExperience)
+        if (eErr) throw eErr
+      }
+
+      await supabase.from("team_specialization_areas").delete().eq("member_id", memberId)
+      if (validSpecialization.length > 0) {
+        const { error: sErr } = await supabase.from("team_specialization_areas").insert(validSpecialization)
+        if (sErr) throw sErr
       }
 
       setShowModal(false)
@@ -232,6 +332,45 @@ export default function AdminTeamPage() {
 
   const removeComplementaryBlock = (index: number) => {
     setComplementaryBlocks(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const addAcademicBlock = () => {
+    if (academicBlocks.length >= 10) return
+    setAcademicBlocks(prev => [...prev, { course_name: "", period: "", institution: "", thesis_title: "", sort_order: prev.length }])
+  }
+
+  const updateAcademicBlock = (index: number, patch: Partial<AcademicInput>) => {
+    setAcademicBlocks(prev => prev.map((b, i) => i === index ? { ...b, ...patch } : b))
+  }
+
+  const removeAcademicBlock = (index: number) => {
+    setAcademicBlocks(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const addExperienceBlock = () => {
+    if (experienceBlocks.length >= 10) return
+    setExperienceBlocks(prev => [...prev, { role_title: "", period: "", description: "", sort_order: prev.length }])
+  }
+
+  const updateExperienceBlock = (index: number, patch: Partial<ExperienceInput>) => {
+    setExperienceBlocks(prev => prev.map((b, i) => i === index ? { ...b, ...patch } : b))
+  }
+
+  const removeExperienceBlock = (index: number) => {
+    setExperienceBlocks(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const addSpecializationBlock = () => {
+    if (specializationBlocks.length >= 3) return
+    setSpecializationBlocks(prev => [...prev, { area_title: "", topics_list: "", sort_order: prev.length }])
+  }
+
+  const updateSpecializationBlock = (index: number, patch: Partial<SpecializationInput>) => {
+    setSpecializationBlocks(prev => prev.map((b, i) => i === index ? { ...b, ...patch } : b))
+  }
+
+  const removeSpecializationBlock = (index: number) => {
+    setSpecializationBlocks(prev => prev.filter((_, i) => i !== index))
   }
 
   const toSlug = (s: string) => s.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -311,10 +450,70 @@ export default function AdminTeamPage() {
                 <input value={form.social_media || ''} onChange={e => setForm(f => ({...f, social_media: e.target.value}))} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Ex: @jonatascosta.adv" />
               </div>
 
-              {/* Especialidades */}
-              <div className="md:col-span-2">
-                <label className="block text-sm text-gray-300 mb-1">Especialidades (separe por vÃ­rgula)</label>
-                <input value={(form.specialties||[]).join(', ')} onChange={e => setForm(f => ({...f, specialties: e.target.value.split(',').map(s => s.trim()).filter(Boolean)}))} className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100" placeholder="Ex: CÃ­vel, Trabalhista, Consumidor" />
+              {/* Áreas de Especialização */}
+              <div className="md:col-span-2 border-t border-gray-700 pt-4 mt-2">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm text-gray-300">Áreas de Especialização</label>
+                  <button
+                    type="button"
+                    onClick={addSpecializationBlock}
+                    disabled={specializationBlocks.length >= 3}
+                    className="px-3 py-1.5 text-xs bg-gold-500 text-gray-900 rounded-md hover:bg-gold-400 disabled:bg-gray-600 disabled:text-gray-300"
+                  >
+                    Adicionar Área ({specializationBlocks.length}/3)
+                  </button>
+                </div>
+                <div className="space-y-4 max-h-[35vh] overflow-y-auto pr-2">
+                  {specializationBlocks.map((block, index) => (
+                    <div key={block.id || `spec-${index}`} className="bg-gray-800 rounded-lg p-4 border border-gray-600 space-y-3">
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Título da Área</label>
+                          <input
+                            value={block.area_title}
+                            onChange={e => updateSpecializationBlock(index, { area_title: e.target.value })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                            placeholder="Ex: Direito Civil"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Ordem</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={block.sort_order}
+                            onChange={e => updateSpecializationBlock(index, { sort_order: parseInt(e.target.value || '0', 10) })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-gray-400 mb-1">Lista de Tópicos (um por linha)</label>
+                          <textarea
+                            value={block.topics_list}
+                            onChange={e => updateSpecializationBlock(index, { topics_list: e.target.value })}
+                            rows={4}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                            placeholder="Contratos em geral
+Cobranças judiciais
+Indenizações"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => removeSpecializationBlock(index)}
+                          className="px-3 py-1 text-xs bg-red-500/20 text-red-300 border border-red-500/30 rounded-md hover:bg-red-500/30"
+                        >
+                          Remover Área
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {specializationBlocks.length === 0 && (
+                    <p className="text-sm text-gray-400">Nenhuma área cadastrada. Clique em "Adicionar Área" para começar.</p>
+                  )}
+                </div>
               </div>
 
               {/* Lattes */}
@@ -341,12 +540,84 @@ export default function AdminTeamPage() {
               </div>
 
               {/* Formação Acadêmica */}
-              <div className="md:col-span-2">
-                <label className="block text-sm text-gray-300 mb-1">Formação Acadêmica</label>
-                <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
-                  <MDEditor value={form.academic_education || ''} onChange={(v) => setForm(f => ({...f, academic_education: (v || '').toString()}))} height={180} preview="edit" />
+              <div className="md:col-span-2 border-t border-gray-700 pt-4 mt-2">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm text-gray-300">Formação Acadêmica</label>
+                  <button
+                    type="button"
+                    onClick={addAcademicBlock}
+                    disabled={academicBlocks.length >= 10}
+                    className="px-3 py-1.5 text-xs bg-gold-500 text-gray-900 rounded-md hover:bg-gold-400 disabled:bg-gray-600 disabled:text-gray-300"
+                  >
+                    Adicionar Formação ({academicBlocks.length}/10)
+                  </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Os textos são justificados automaticamente no site. Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links. Não use tags HTML.</p>
+                <div className="space-y-4 max-h-[45vh] overflow-y-auto pr-2">
+                  {academicBlocks.map((block, index) => (
+                    <div key={block.id || `acad-${index}`} className="bg-gray-800 rounded-lg p-4 border border-gray-600 space-y-3">
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-gray-400 mb-1">Nome do Curso</label>
+                          <input
+                            value={block.course_name}
+                            onChange={e => updateAcademicBlock(index, { course_name: e.target.value })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                            placeholder="Ex: Bacharelado em Direito"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Período</label>
+                          <input
+                            value={block.period}
+                            onChange={e => updateAcademicBlock(index, { period: e.target.value })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                            placeholder="Ex: 2018 - 2022"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Ordem</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={block.sort_order}
+                            onChange={e => updateAcademicBlock(index, { sort_order: parseInt(e.target.value || '0', 10) })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-gray-400 mb-1">Instituição</label>
+                          <input
+                            value={block.institution}
+                            onChange={e => updateAcademicBlock(index, { institution: e.target.value })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                            placeholder="Ex: FACISA/CESESB"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-gray-400 mb-1">Título do TCC/Monografia (opcional)</label>
+                          <input
+                            value={block.thesis_title}
+                            onChange={e => updateAcademicBlock(index, { thesis_title: e.target.value })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                            placeholder="Ex: O direito ao esquecimento na internet"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => removeAcademicBlock(index)}
+                          className="px-3 py-1 text-xs bg-red-500/20 text-red-300 border border-red-500/30 rounded-md hover:bg-red-500/30"
+                        >
+                          Remover Formação
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {academicBlocks.length === 0 && (
+                    <p className="text-sm text-gray-400">Nenhuma formação cadastrada. Clique em "Adicionar Formação" para começar.</p>
+                  )}
+                </div>
               </div>
 
               {/* Formação Complementar — Blocos Estruturados */}
@@ -444,12 +715,76 @@ export default function AdminTeamPage() {
               </div>
 
               {/* Experiência Profissional */}
-              <div className="md:col-span-2">
-                <label className="block text-sm text-gray-300 mb-1">Experiência Profissional</label>
-                <div className="bg-gray-800 rounded-md border border-gray-600 overflow-hidden">
-                  <MDEditor value={form.professional_experience || ''} onChange={(v) => setForm(f => ({...f, professional_experience: (v || '').toString()}))} height={180} preview="edit" />
+              <div className="md:col-span-2 border-t border-gray-700 pt-4 mt-2">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm text-gray-300">Experiência Profissional</label>
+                  <button
+                    type="button"
+                    onClick={addExperienceBlock}
+                    disabled={experienceBlocks.length >= 10}
+                    className="px-3 py-1.5 text-xs bg-gold-500 text-gray-900 rounded-md hover:bg-gold-400 disabled:bg-gray-600 disabled:text-gray-300"
+                  >
+                    Adicionar Experiência ({experienceBlocks.length}/10)
+                  </button>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Os textos são justificados automaticamente no site. Use Markdown: **negrito**, *itálico*, ~~tachado~~, listas e links. Não use tags HTML.</p>
+                <div className="space-y-4 max-h-[45vh] overflow-y-auto pr-2">
+                  {experienceBlocks.map((block, index) => (
+                    <div key={block.id || `exp-${index}`} className="bg-gray-800 rounded-lg p-4 border border-gray-600 space-y-3">
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Cargo/Função</label>
+                          <input
+                            value={block.role_title}
+                            onChange={e => updateExperienceBlock(index, { role_title: e.target.value })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                            placeholder="Ex: Advogado Júnior"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Período</label>
+                          <input
+                            value={block.period}
+                            onChange={e => updateExperienceBlock(index, { period: e.target.value })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                            placeholder="Ex: 2023 - Atual"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-gray-400 mb-1">Descrição</label>
+                          <textarea
+                            value={block.description}
+                            onChange={e => updateExperienceBlock(index, { description: e.target.value })}
+                            rows={4}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                            placeholder="Atividades principais..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1">Ordem</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={block.sort_order}
+                            onChange={e => updateExperienceBlock(index, { sort_order: parseInt(e.target.value || '0', 10) })}
+                            className="w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-gray-100"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => removeExperienceBlock(index)}
+                          className="px-3 py-1 text-xs bg-red-500/20 text-red-300 border border-red-500/30 rounded-md hover:bg-red-500/30"
+                        >
+                          Remover Experiência
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {experienceBlocks.length === 0 && (
+                    <p className="text-sm text-gray-400">Nenhuma experiência cadastrada. Clique em "Adicionar Experiência" para começar.</p>
+                  )}
+                </div>
               </div>
 
               {/* Currículo livre / observações internas */}
