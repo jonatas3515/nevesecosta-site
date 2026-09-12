@@ -216,7 +216,19 @@ export default function AdminTeamPage() {
     try {
       const photo_url = await handleUpload()
       const memberId = editing ? editing.id : uuidv4()
-      const payload = { ...form, photo_url, specialties: form.specialties && Array.isArray(form.specialties) ? form.specialties : [] }
+      const normalizeDate = (v: string | undefined | null): string | null => {
+        const s = typeof v === 'string' ? v.trim() : ''
+        if (!s) return null
+        // Aceita apenas formato ISO YYYY-MM-DD vindo de input type="date"
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+        return null
+      }
+      const payload = {
+        ...form,
+        photo_url,
+        lattes_updated_at: normalizeDate(form.lattes_updated_at),
+        specialties: form.specialties && Array.isArray(form.specialties) ? form.specialties : []
+      }
       if (editing) {
         const { error } = await supabase.from("team_members").update(payload).eq("id", memberId)
         if (error) throw error
@@ -298,7 +310,13 @@ export default function AdminTeamPage() {
       setShowModal(false)
       await load()
     } catch (e: any) {
-      alert("Erro ao salvar: " + (e?.message || String(e)))
+      const technical = e?.message || String(e)
+      console.error("[AdminTeam] save error", e)
+      if (technical.includes('invalid input syntax for type date') || technical.includes('22007')) {
+        alert('Não foi possível salvar o membro. Verifique os campos de data.')
+      } else {
+        alert('Não foi possível salvar o membro. Verifique os campos e tente novamente.')
+      }
     } finally { setSaving(false) }
   }
 
